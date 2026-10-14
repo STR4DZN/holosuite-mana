@@ -5,7 +5,7 @@ export class BankApp extends foundry.applications.api.ApplicationV2 {
  static DEFAULT_OPTIONS={id:'holosuite-mana-bank',classes:['mb-app'],window:{title:'Banco de Mana · Reserva de mana',icon:'fa-solid fa-building-columns',resizable:true},position:{width:1060,height:840}};
  constructor(service,notifications,options={}){
   super(options);this.service=service;this.notifications=notifications;
-  this.bankState={tab:'reserve',historyFilter:'all',page:0,profile:'cinematic',direction:game.user.isGM?'credit':'debit',accent:color(game.settings.get(ID,'noticeColor')),amount:'',note:'',status:null,busy:false,revision:0};
+  this.bankState={tab:'reserve',confirmClear:false,historyFilter:'all',page:0,profile:'cinematic',direction:game.user.isGM?'credit':'debit',accent:color(game.settings.get(ID,'noticeColor')),amount:'',note:'',status:null,busy:false,revision:0};
   this.unsubscribe=null;this.timer=null;this.controller=null;this.motion=[];this.balanceFrame=null;this.previousBalance=null;this.lastTab=null;
  }
  async _renderHTML(){
@@ -58,7 +58,15 @@ export class BankApp extends foundry.applications.api.ApplicationV2 {
   else if(action==='amount'){s.amount=button.dataset.value;s.status=null;}
   else{
    ensure(game.user.isGM,'Este controle é exclusivo do mestre.');
-   if(action==='direction'){s.direction=button.dataset.value;s.status=null;}
+   if(action==='clear-history'){s.confirmClear=true;s.status=null;}
+   else if(action==='clear-cancel')s.confirmClear=false;
+   else if(action==='clear-confirm'){
+    s.busy=true;s.status=null;await this.render();
+    try{await this.service.request({action:'clearHistory',revision:s.revision});s.confirmClear=false;s.page=0;s.historyFilter='all';s.status={text:'Histórico do banco apagado. O saldo foi mantido.'};}
+    catch(error){s.status={text:error.message,error:true};}
+    finally{s.busy=false;this.refresh();}return;
+   }
+   else if(action==='direction'){s.direction=button.dataset.value;s.status=null;}
    else if(action==='profile')s.profile=button.dataset.value;
    else if(action==='color'){s.accent=color(button.dataset.value);await game.settings.set(ID,'noticeColor',s.accent);}
    else if(action==='preview'){

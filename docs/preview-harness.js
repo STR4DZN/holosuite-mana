@@ -20,6 +20,7 @@ try{data=JSON.parse(localStorage.getItem('hollow-switch-preview-v2'));}catch{}
 if(!data)data={schema:2,sequence:0,pool:{balance:12840,revision:0},transactions:[]};
 const observers=new Set(),notifications=new ManaNotifications({reduced:()=>settings.get('reduceMotion')});
 const service={get data(){return data;},get users(){return [...users].filter(u=>!u.isGM);},balance(id){return account(data,id);},subscribe(fn){observers.add(fn);return ()=>observers.delete(fn);},async request(payload){
+ if(payload.action==='clearHistory'){const output=clearHistory(data,payload,{sender:game.user,requestId:crypto.randomUUID().replaceAll('-','').slice(0,16)});data=output.ledger;localStorage.setItem('hollow-switch-preview-v2',JSON.stringify(data));for(const fn of observers)fn();return {cleared:true,count:output.count};}
  const result=transact(data,payload,{sender:game.user,requestId:crypto.randomUUID().replaceAll('-','').slice(0,16),chatId:'preview',now:Date.now()});
  data=result.ledger;data.transactions.at(-1).chatPosted=true;localStorage.setItem('hollow-switch-preview-v2',JSON.stringify(data));for(const fn of observers)fn();notifications.enqueue(result.receipt);
  const chat=document.querySelector('#demo-chat');chat.insertAdjacentHTML('afterbegin',receiptHTML(result.receipt));return result.receipt;

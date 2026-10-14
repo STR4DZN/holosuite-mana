@@ -1,5 +1,16 @@
 # Histórico
 
+## 2.2.0
+
+- Banco de Mana registrado como app do celular HoloSuite para mestre e jogadores.
+- Remove o botão da barra de configurações e o menu de abertura do Foundry.
+- Manifesto continua sem dependências obrigatórias.
+- Limpar histórico na aba Movimentações, com confirmação exclusiva do mestre; saldo e chat são mantidos.
+- Uma mensagem pública por operação, somente com alteração e saldos antes/depois, usando o nome Banco de Mana.
+- Solicitações e confirmações deixam de criar mensagens no chat e usam documentos User nativos.
+- Mantém autenticação pelo usuário do evento, fila, revisão global, recuperação de chat e proteção contra replay.
+- 36 testes Node e 33 cenários Chromium com três clientes independentes.
+
 ## 2.1.0
 
 - Nome Banco de Mana em todas as telas, avisos, chat e manifesto.

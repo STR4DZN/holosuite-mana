@@ -1,16 +1,16 @@
-Banco de Mana 2.1.0 · Foundry VTT 13.
+Banco de Mana 2.2.0 · Foundry VTT 13.
 
-- Banco de Mana em todas as telas, avisos, chat e identificação do módulo.
-- Nenhuma dependência de outros módulos: pode ser ativado sozinho.
-- Botão Banco de Mana na aba Configurações do Foundry, disponível para mestre e jogadores.
-- Acesso adicional em Configurar definições → Banco de Mana → Abrir banco.
-- Cartão de saldo grande, com largura principal da janela, chip e identificação compartilhada. Controles de movimentação abaixo do cartão.
-- Um saldo único para todos: jogadores gastam; mestre adiciona e remove.
-- Cor livre e animações Cinemática/Tática do mestre, avisos para todos e recibo no chat.
-- 30 testes Node e 28 cenários de navegador, incluindo três clientes com somente este módulo instalado.
+- App Banco de Mana no celular HoloSuite, disponível para mestre e jogadores.
+- Remove botão e menu de abertura das configurações do Foundry.
+- Mantém manifesto sem dependências obrigatórias.
+- Movimentações → Limpar histórico: somente mestre, com confirmação. Saldo e mensagens do chat são mantidos.
+- Exatamente uma mensagem pública por pagamento: alteração de mana e saldo antes/depois. Sem nome de quem alterou nem descrição, com alias Banco de Mana.
+- Solicitação e confirmação passam a usar documentos User nativos e deixam de criar mensagens de chat.
+- Mantém fila, revisão global, autenticação de remetente, proteção contra duplicação/replay, animações e recuperação de chat.
+- 36 testes Node e 33 cenários Chromium, incluindo três clientes independentes.
 
-Instalação: cole a URL do asset module.json no campo URL do Manifesto do Foundry. Ative Banco de Mana e abra o botão na aba Configurações.
+Atualize o módulo e recarregue com F5 em todos os clientes. Com HoloSuite ativo, abra o celular e clique em Banco de Mana.
 
 Banco-Mana-Preview.html demonstra a interface com dados fictícios.
 
-Validação em contratos simulados e Chromium. Sessão licenciada real do Foundry ainda precisa ser validada.
+Validação em contratos simulados e Chromium. Sessão licenciada real ainda precisa ser validada.

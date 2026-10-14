@@ -49,6 +49,17 @@ export class SerialQueue {
  constructor(){this.tail=Promise.resolve();}
  run(task){const result=this.tail.then(task);this.tail=result.catch(()=>{});return result;}
 }
+export function clearHistory(current,request,{sender,requestId,now=Date.now()}={}){
+ const input=ledger(current);ensure(sender?.active&&sender.isGM,'Somente o mestre pode limpar o histórico.');
+ ensure(typeof requestId==='string'&&/^[a-zA-Z0-9]{1,32}$/.test(requestId),'Solicitação inválida.');
+ if(input.lastClear?.requestId===requestId){ensure(input.lastClear.senderId===sender.id,'Solicitação pertence a outro usuário.');return {ledger:input,count:input.lastClear.count,duplicate:true};}
+ ensure(request.revision===input.pool.revision,'O saldo mudou. Confira o valor atualizado e confirme novamente.');
+ ensure(!input.transactions.some(r=>!r.chatPosted),'Há uma mensagem de chat pendente. Aguarde a recuperação antes de limpar.');
+ ensure(Number.isSafeInteger(input.pool.revision+1),'Limite de operações atingido.');
+ const next=structuredClone(input),count=next.transactions.length;
+ next.transactions=[];next.pool.revision++;next.lastClear={requestId,senderId:sender.id,count,at:now};
+ return {ledger:next,count,duplicate:false};
+}
 export function receiptHTML(r){
- return `<article class="mb-chat" style="--mb-accent:${color(r.color)}"><header><span>◈</span> BANCO DE MANA</header><p><strong>${escapeHTML(r.accountName)}</strong> ${r.delta>0?'ganhou':'perdeu'} <b>${formatMana(r.amount)} mana</b>.</p><div class="mb-chat-balance">Saldo: <strong>${formatMana(r.after)} mana</strong></div>${r.senderName?`<small>Operação: ${escapeHTML(r.senderName)}</small>`:''}${r.note?`<small>${escapeHTML(r.note)}</small>`:''}</article>`;
+ return `<article class="mb-chat" style="--mb-accent:${color(r.color)}"><header>BANCO DE MANA</header><p><b>${r.delta>0?'+':'−'}${formatMana(r.amount)} mana</b></p><div class="mb-chat-balance">${formatMana(r.before)} → <strong>${formatMana(r.after)} mana</strong></div></article>`;
 }

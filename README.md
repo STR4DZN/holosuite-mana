@@ -1,45 +1,59 @@
 # Banco de Mana
 
-Banco de **todos os jogadores** para **Foundry VTT 13**. Um único saldo de mana compartilhado, começando em zero. **Não exige nenhum outro módulo.**
+Banco de **todos os jogadores** para **Foundry VTT 13**, como aplicativo do **celular HoloSuite**. Um único saldo de mana compartilhado, começando em zero.
 
 ## Instalar e abrir
 
-Cole em **Configuração → Módulos → Instalar módulo → URL do Manifesto**:
+Use em **Instalar módulo → URL do Manifesto**:
 
 ```text
 https://github.com/STR4DZN/holosuite-mana/releases/latest/download/module.json
 ```
 
-Ative somente **Banco de Mana** no mundo. Na aba **Configurações** da barra lateral do Foundry, clique no botão **Banco de Mana**. Também é possível abrir em **Configurar definições → Banco de Mana → Abrir banco**. Os dois acessos estão disponíveis para mestre e jogadores.
+Ative **Banco de Mana** e o **HoloSuite** no mundo. Abra o celular HoloSuite e clique no app **Banco de Mana**, com ícone de banco. O app aparece para mestre e jogadores. Não há botão de abertura na barra de configurações ou no controle de tokens/mapa.
+
+O manifesto continua sem dependências obrigatórias, permitindo ativar o módulo sem bloqueio por versões de outro módulo. A integração com o celular ocorre quando a API do HoloSuite está disponível. Ao atualizar, todos os participantes devem recarregar o Foundry com **F5** para usar o mesmo protocolo de movimentação.
 
 ## Uso
 
-O saldo aparece em um **cartão grande**, ocupando a largura principal da janela, com chip, identificação de conta compartilhada e valor em destaque. Os controles ficam abaixo do cartão.
+O saldo ocupa um cartão grande, com chip, identificação compartilhada e valor em destaque. Os controles ficam abaixo.
 
-**Jogadores:** informe o valor, adicione uma descrição opcional e clique em **Confirmar gasto**. O débito sai do mesmo saldo que todos veem.
+**Jogadores:** informe a quantidade e clique em **Confirmar gasto**. A descrição opcional fica no histórico do banco. O débito sai do saldo compartilhado.
 
-**Mestre:** escolha **Adicionar** ou **Remover**, informe valor e descrição e confirme. Em **Assinatura do aviso**, escolha uma cor, inclusive personalizada, e o perfil **Cinemática / 6,8s** ou **Tática / 4,6s**. **Testar aviso** mostra a prévia apenas para você, sem alterar dinheiro nem chat. A última cor fica salva neste navegador.
+**Mestre:** adicione ou remova mana. Em **Assinatura do aviso**, escolha cor e perfil **Cinemática / 6,8s** ou **Tática / 4,6s**. **Testar aviso** é local e não movimenta dinheiro nem publica chat.
 
-A aba **Movimentações** tem filtros de entradas/saídas, paginação, responsável, horário, descrição, valor e número do registro. A tela principal mostra os três movimentos mais recentes.
+**Limpar histórico:** como mestre, abra **Movimentações → Limpar histórico → Apagar histórico**. Há confirmação antes de executar. Os registros da janela são apagados para todos; o saldo e as mensagens já enviadas no chat são mantidos. Jogadores não veem esse controle e não conseguem executá-lo pela API ou forjando uma solicitação. Recibos ainda pendentes no chat precisam ser publicados antes da limpeza.
 
-## Avisos e consistência
+A aba Movimentações tem filtros, paginação, responsável, horário, descrição e valor. O nome do responsável continua nesse histórico interno; não é exibido na mensagem do chat.
 
-Cada operação confirmada gera um aviso central nos clientes conectados e um recibo público no chat. A animação tem abertura, trilhos, varredura, partículas direcionais, contagem do valor e do saldo, trilha de confirmação, selo e fechamento. A cor e o perfil do mestre acompanham o recibo em todos os clientes.
+## Uma mensagem no chat
 
-- O saldo real é salvo antes do aviso. Os efeitos terminam e são removidos; avisos simultâneos entram em fila.
-- A opção **Banco de Mana: reduzir movimentos** e a preferência do sistema mostram os valores finais e interrompem os efeitos em andamento.
-- Um mestre ativo é necessário para movimentar mana. O saldo já salvo pode ser consultado sem mestre.
-- Todos compartilham a mesma reserva. Somente mestres podem adicionar mana; jogadores podem gastar.
-- Quantidades inteiras e positivas, sem saldo negativo; limite de 999.999.999.999 mana.
-- Saldo e recibo são gravados juntos em uma configuração de mundo protegida. A identidade é fornecida pelo evento nativo do Foundry.
-- Uma autoridade de mestre e uma fila serializam as operações. A revisão global rejeita confirmações obsoletas; solicitações duplicadas não movimentam dinheiro novamente.
-- Falha ao salvar não confirma ganho/perda. Se o chat falhar após o saldo ser salvo, o recibo fica pendente e é republicado com ID fixo, sem repetir o valor nem o aviso.
-- A janela mostra cerca de 300 registros recentes e conserva recibos pendentes. O chat mantém o registro público do mundo.
-- Não depende de personagem, token ou cena. Compras na Máquina de Lanches não são descontadas automaticamente.
+Cada alteração confirmada cria **exatamente uma mensagem pública**, com o alias **Banco de Mana** e somente os valores. Exemplo:
+
+```text
++250 mana
+1.000 → 1.250 mana
+```
+
+Não há nome de jogador/mestre, descrição ou mensagens de solicitação/confirmação no chat. Limpar o histórico não gera mensagem financeira. Solicitações recusadas não publicam débito ou crédito.
+
+Os avisos centrais e animações continuam sendo mostrados aos clientes conectados, com a cor escolhida pelo mestre. O saldo real é salvo antes da animação. Efeitos são removidos ao terminar, e a preferência de movimento reduzido interrompe os efeitos em andamento e mostra os valores finais.
+
+## Consistência
+
+- Um mestre ativo é necessário para movimentar mana. Consultar o saldo salvo continua possível sem mestre conectado.
+- Somente mestres podem adicionar mana ou limpar o histórico. Jogadores podem gastar do saldo compartilhado.
+- Quantidades inteiras e positivas, saldo nunca negativo; limite de 999.999.999.999 mana.
+- Saldo e recibo são gravados juntos na configuração de mundo, com escrita exclusiva de mestres.
+- Solicitações usam atualizações das flags do próprio documento User. A identidade vem do evento nativo do Foundry; campos de remetente enviados não concedem permissões. Confirmações só são aceitas quando vêm do mestre responsável.
+- Uma autoridade de mestre e uma fila serializam pagamentos e limpeza. Revisões globais rejeitam operações obsoletas, e IDs evitam repetição da mesma solicitação.
+- Limpar o histórico mantém a sequência de operações e avança a revisão, impedindo replay de solicitações anteriores sem alterar o saldo.
+- Falha ao salvar não confirma ganho/perda. Chat indisponível após a gravação conserva o recibo e tenta publicá-lo com ID fixo, sem duplicar saldo, aviso ou mensagem.
+- A janela conserva cerca de 300 registros recentes, mais recibos pendentes, até o mestre limpar. Não depende de personagem, token ou cena. Não desconta automaticamente compras da Máquina de Lanches.
 
 ## Desenvolvimento e validação
 
-JavaScript ES Modules, ApplicationV2, SVG e CSS isolado. Web Animations API e documentos nativos do Foundry. Nenhuma biblioteca ou módulo adicional em execução.
+JavaScript ES Modules, ApplicationV2, SVG, CSS isolado e Web Animations API. Transporte por documentos nativos, sem socketlib ou biblioteca adicional.
 
 ```bash
 npm test
@@ -52,22 +66,23 @@ node docs/test-preview.mjs
 node docs/test-native.mjs
 ```
 
-`HV_CHROMIUM_PATH` aceita um Chromium já instalado. `Banco-Mana-Preview.html` é uma demonstração com dados fictícios e não altera o Foundry.
+`HV_CHROMIUM_PATH` aceita um Chromium já instalado. `Banco-Mana-Preview.html` usa dados fictícios e não altera o mundo.
 
-Validação: **30 testes Node**, **15 cenários da prévia** e **13 cenários com três clientes independentes** importando o código real, sob contratos simulados do Foundry 13. O cenário de abertura instala somente o banco, sem outros módulos. Testes incluem concorrência entre jogadores, permissões, persistência/chat indisponíveis, recuperação, mestre offline, cores e limpeza das animações. A sessão licenciada real ainda precisa ser validada; o manifesto não declara `verified`.
+Validação: **36 testes Node**, **17 cenários da prévia** e **16 cenários com três clientes independentes** importando o código real sob contratos simulados do Foundry 13 e HoloSuite. Inclui registro tardio do app, ausência do botão antigo, uma mensagem por pagamento, limpeza cancelada/confirmada, saldo preservado, recusa de pedidos forjados, concorrência, mestre offline e falhas de persistência/chat. A sessão licenciada real ainda precisa ser validada; o manifesto não declara `verified`.
 
 ## API
 
 ```javascript
 const bank = game.modules.get('holosuite-mana').api;
 await bank.open();
-bank.getBalance(); // o mesmo saldo para todos
-await bank.debit(150, {note: 'Suprimentos'}); // jogador ou mestre
-await bank.credit(500, {note: 'Recompensa', color: '#ad8aff', profile: 'cinematic'}); // mestre
+bank.getBalance();
+await bank.debit(150, {note: 'Suprimentos'});
+await bank.credit(500, {note: 'Recompensa', color: '#ad8aff'}); // mestre
+await bank.clearHistory(); // mestre; limpa registros da janela e mantém saldo/chat
 ```
 
-O identificador técnico foi preservado para manter o saldo já criado no banco. As permissões e validações são as mesmas da interface.
+O identificador técnico foi preservado para manter o saldo já criado no banco. As mesmas permissões são verificadas no serviço autoritativo.
 
-## Referências visuais
+## Referências
 
-Veja [pesquisa de direção visual](docs/design-research.md). A interface e os vetores são originais; nenhum asset de terceiros é distribuído.
+[Direção visual](docs/design-research.md). Vetores e interface originais, sem assets de terceiros. A integração segue o contrato `registerApp` e o hook `holosuite-core.apiReady`, como em [HoloNews](https://github.com/STR4DZN/holosuite-news/blob/main/src/integration/holosuite.ts).
