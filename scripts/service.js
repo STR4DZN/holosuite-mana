@@ -4,7 +4,7 @@ export class BankService {
  constructor(){this.queue=new SerialQueue();this.pending=new Map();this.observers=new Set();this.retryTimer=null;this.onTransaction=()=>{};this.lastSequence=0;}
  get data(){return ledger(game.settings.get(ID,'ledger'));}
  get users(){return [...game.users].filter(u=>!u.isGM&&u.role!==0);}
- balance(userId=game.user.id){return account(this.data,userId);}
+ balance(){return account(this.data);}
  subscribe(fn){this.observers.add(fn);return ()=>this.observers.delete(fn);}
  changed(value){
   const data=ledger(value);for(const fn of this.observers){try{fn();}catch(error){console.warn('Banco Mana: falha ao atualizar uma janela.',error);}}
@@ -17,7 +17,7 @@ export class BankService {
  install(){
   this.lastSequence=this.data.sequence;
   Hooks.on('createChatMessage',(message,options,userId)=>{
-   const request=message.getFlag(ID,'request');if(!request||request.version!==1||request.authorityId!==game.user.id||activeGM()?.id!==game.user.id||!game.user.isGM)return;
+   const request=message.getFlag(ID,'request');if(!request||request.version!==2||request.authorityId!==game.user.id||activeGM()?.id!==game.user.id||!game.user.isGM)return;
    this.queue.run(()=>this.process(message,structuredClone(request),userId)).catch(error=>console.error('Banco Mana:',error));
   });
   Hooks.on('updateChatMessage',(message,changes,options,userId)=>{
@@ -32,7 +32,7 @@ export class BankService {
  async request(payload){
   const gm=activeGM();ensure(gm?.active,'É necessário um mestre conectado para movimentar mana.');
   ensure(game.user.isGM||payload.direction==='debit','Somente o mestre pode adicionar mana.');
-  const request={...payload,version:1,authorityId:gm.id};
+  const request={...payload,accountId:'shared',version:2,authorityId:gm.id};
   const message=await ChatMessage.create({user:game.user.id,whisper:[...new Set([game.user.id,gm.id])],content:'<p>Banco Mana · Confirmando movimentação…</p>',flags:{[ID]:{request}}});
   ensure(message,'O Foundry não permitiu enviar a solicitação ao banco.');
   return new Promise((resolve,reject)=>{
@@ -47,8 +47,9 @@ export class BankService {
    ensure(game.user.isGM&&activeGM()?.id===game.user.id,'O mestre responsável mudou. Confira o saldo antes de repetir.');
    const previous=message.getFlag(ID,'result');if(previous)return;
    ensure(JSON.stringify(request).length<=4096,'Solicitação muito grande.');
-   const sender=game.users.get(userId),target=game.users.get(request.accountId);
-   const output=transact(this.data,request,{sender,target,requestId:message.id,chatId:foundry.utils.randomID()});
+   ensure(request.version===2,'Atualize o aplicativo para usar a reserva compartilhada.');
+   const sender=game.users.get(userId);
+   const output=transact(this.data,request,{sender,requestId:message.id,chatId:foundry.utils.randomID()});
    if(!output.duplicate){ensure(activeGM()?.id===game.user.id,'O mestre responsável mudou.');await game.settings.set(ID,'ledger',output.ledger);}
    result={ok:true,receipt:output.receipt};
    try{await this.postChat(output.receipt);}catch(error){console.warn('Banco Mana: saldo salvo; recibo de chat aguardando nova tentativa.',error);this.scheduleRetry();}

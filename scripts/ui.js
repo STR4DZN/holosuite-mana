@@ -1,50 +1,65 @@
-import {ID,amount,color,CREDIT_COLOR,DEBIT_COLOR,formatMana,ensure} from './core.js';
+import {ID,amount,color,DEBIT_COLOR,formatMana,ensure} from './core.js';
 import {activeGM} from './service.js';
 import {bankView} from './view.js';
 export class BankApp extends foundry.applications.api.ApplicationV2 {
- static DEFAULT_OPTIONS={id:'holosuite-mana-bank',classes:['mb-app'],window:{title:'Banco Mana',icon:'fa-solid fa-building-columns',resizable:true},position:{width:1000,height:850}};
+ static DEFAULT_OPTIONS={id:'holosuite-mana-bank',classes:['mb-app'],window:{title:'Hollow Switch · Reserva de mana',icon:'fa-solid fa-building-columns',resizable:true},position:{width:1060,height:840}};
  constructor(service,notifications,options={}){
   super(options);this.service=service;this.notifications=notifications;
-  this.bankState={accountId:null,direction:game.user.isGM?'credit':'debit',accent:color(game.settings.get(ID,'noticeColor')),amount:'',note:'',status:null,busy:false,revision:0};
-  this.unsubscribe=null;this.timer=null;this.controller=null;
+  this.bankState={tab:'reserve',historyFilter:'all',page:0,profile:'cinematic',direction:game.user.isGM?'credit':'debit',accent:color(game.settings.get(ID,'noticeColor')),amount:'',note:'',status:null,busy:false,revision:0};
+  this.unsubscribe=null;this.timer=null;this.controller=null;this.motion=[];this.balanceFrame=null;this.previousBalance=null;this.lastTab=null;
  }
  async _renderHTML(){
-  const s=this.bankState,isGM=game.user.isGM,users=this.service.users;
-  if(!isGM){s.accountId=game.user.id;s.direction='debit';s.accent=DEBIT_COLOR;}
-  else if(!users.some(u=>u.id===s.accountId))s.accountId=users[0]?.id||null;
-  const account=s.accountId?this.service.balance(s.accountId):{balance:0,revision:0};s.revision=account.revision;
-  return bankView({...s,isGM,users:users.map(u=>({...u,balance:this.service.balance(u.id).balance})),user:game.users.get(s.accountId),account,online:!!activeGM()?.active});
+  const s=this.bankState;if(!game.user.isGM){s.direction='debit';s.accent=DEBIT_COLOR;}
+  const account=this.service.balance();s.revision=account.revision;
+  return bankView({...s,isGM:game.user.isGM,users:this.service.users,account,transactions:this.service.data.transactions,online:!!activeGM()?.active});
  }
  _replaceHTML(result,content){
-  const focus=content.contains(document.activeElement)?{name:document.activeElement.name,start:document.activeElement.selectionStart,end:document.activeElement.selectionEnd}:null;
-  const scroll=content.querySelector('.mb-account-list')?.scrollTop||0;
-  this.controller?.abort();this.controller=new AbortController();content.innerHTML=result;
+  const focus=content.contains(document.activeElement)?{name:document.activeElement.name,action:document.activeElement.dataset.mb,value:document.activeElement.dataset.value,start:document.activeElement.selectionStart,end:document.activeElement.selectionEnd}:null;
+  const scroll=content.querySelector('.mb-main')?.scrollTop||0,entrance=this.lastTab!==this.bankState.tab;
+  this.cancelMotion();this.controller?.abort();this.controller=new AbortController();content.innerHTML=result;
   const options={signal:this.controller.signal};
   content.addEventListener('click',e=>this.onClick(e).catch(error=>this.showError(error)),options);
   content.addEventListener('input',e=>this.onInput(e),options);
   content.addEventListener('submit',e=>{e.preventDefault();this.submit().catch(error=>this.showError(error));},options);
-  if(content.querySelector('.mb-account-list'))content.querySelector('.mb-account-list').scrollTop=scroll;
-  if(focus?.name){const input=content.querySelector(`[name="${focus.name}"]`);input?.focus();if(input&&typeof focus.start==='number')try{input.setSelectionRange(focus.start,focus.end);}catch{}}
+  content.querySelector('.mb-main').scrollTop=entrance?0:scroll;
+  let input;if(focus?.name)input=content.querySelector(`[name="${focus.name}"]`);else if(focus?.action)input=[...content.querySelectorAll('[data-mb]')].find(el=>el.dataset.mb===focus.action&&el.dataset.value===focus.value);
+  input?.focus({preventScroll:true});if(input&&typeof focus?.start==='number')try{input.setSelectionRange(focus.start,focus.end);}catch{}
+  const reduced=game.settings.get(ID,'reduceMotion')||matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if(!reduced){
+   if(entrance){for(const [i,el] of [...content.querySelectorAll('[data-enter]')].entries())this.motion.push(el.animate([{opacity:0,transform:'translateY(18px)'},{opacity:1,transform:'translateY(0)'}],{duration:600,delay:i*65,easing:'cubic-bezier(.16,1,.3,1)'}));
+    const reactor=content.querySelector('.mb-reactor-inner');if(reactor)this.motion.push(reactor.animate([{opacity:0,transform:'rotate(-25deg) scale(.8)'},{opacity:1,transform:'rotate(0) scale(1)'}],{duration:1100,easing:'cubic-bezier(.16,1,.3,1)'}));
+   }
+   const value=content.querySelector('.mb-balance-value'),before=this.previousBalance,after=this.service.balance().balance;
+   if(value&&before!==null&&before!==after){const start=performance.now();const tick=now=>{const t=Math.min(1,(now-start)/750);value.textContent=formatMana(Math.round(before+(after-before)*(1-(1-t)**4)));if(t<1)this.balanceFrame=requestAnimationFrame(tick);else this.balanceFrame=null;};this.balanceFrame=requestAnimationFrame(tick);}
+  }
+  this.previousBalance=this.service.balance().balance;this.lastTab=this.bankState.tab;
  }
+ cancelMotion(){this.motion.forEach(a=>a.cancel());this.motion=[];cancelAnimationFrame(this.balanceFrame);this.balanceFrame=null;}
  _onRender(){if(!this.unsubscribe)this.unsubscribe=this.service.subscribe(()=>this.refresh());}
- _onClose(){this.unsubscribe?.();this.unsubscribe=null;clearTimeout(this.timer);this.controller?.abort();}
+ _onClose(){this.unsubscribe?.();this.unsubscribe=null;clearTimeout(this.timer);this.controller?.abort();this.cancelMotion();this.lastTab=null;}
  refresh(){if(!this.rendered)return;clearTimeout(this.timer);this.timer=setTimeout(()=>this.render().catch(error=>ui.notifications.error(error.message)),40);}
  onInput(event){
   const s=this.bankState;if(s.busy)return;
   if(event.target.name==='amount')s.amount=event.target.value;
   if(event.target.name==='note')s.note=event.target.value;
-  if(event.target.name==='accent'&&game.user.isGM){s.accent=color(event.target.value);this.element.querySelector('.mb-custom-color')?.style.setProperty('--mb-picked-color',s.accent);for(const button of this.element.querySelectorAll('.mb-swatches>button'))button.setAttribute('aria-pressed',String(button.dataset.value.toLowerCase()===s.accent));game.settings.set(ID,'noticeColor',s.accent);}
+  if(event.target.name==='accent'&&game.user.isGM){s.accent=color(event.target.value);this.element.querySelector('.mb-custom-color')?.style.setProperty('--mb-picked-color',s.accent);const hex=this.element.querySelector('.mb-color-hex');if(hex)hex.textContent=s.accent.toUpperCase();for(const button of this.element.querySelectorAll('.mb-swatches>button'))button.setAttribute('aria-pressed',String(button.dataset.value.toLowerCase()===s.accent));game.settings.set(ID,'noticeColor',s.accent).catch(error=>this.showError(error));}
  }
  async onClick(event){
   const button=event.target.closest('[data-mb]');if(!button||this.bankState.busy||button.disabled)return;
   const s=this.bankState,action=button.dataset.mb;
-  ensure(game.user.isGM,'Este controle é exclusivo do mestre.');
-  if(action==='account'){s.accountId=button.dataset.id;s.amount='';s.note='';s.status=null;}
-  else if(action==='direction'){s.direction=button.dataset.value;s.status=null;}
-  else if(action==='color'){s.accent=color(button.dataset.value);await game.settings.set(ID,'noticeColor',s.accent);}
-  else if(action==='preview'){
-   const value=/^[1-9]\d*$/.test(s.amount)?Math.min(Number(s.amount),999999999999):250,before=s.direction==='debit'?Math.max(value,this.service.balance(s.accountId).balance):this.service.balance(s.accountId).balance,delta=s.direction==='credit'?value:-value;
-   this.notifications.enqueue({accountName:game.users.get(s.accountId)?.name||'Jogador',delta,amount:Math.abs(delta),before,after:before+delta,color:s.accent,preview:true});return;
+  if(action==='tab'){s.tab=button.dataset.value;}
+  else if(action==='filter'){s.historyFilter=button.dataset.value;s.page=0;}
+  else if(action==='page'){s.page=Math.max(0,Number(button.dataset.value));}
+  else if(action==='amount'){s.amount=button.dataset.value;s.status=null;}
+  else{
+   ensure(game.user.isGM,'Este controle é exclusivo do mestre.');
+   if(action==='direction'){s.direction=button.dataset.value;s.status=null;}
+   else if(action==='profile')s.profile=button.dataset.value;
+   else if(action==='color'){s.accent=color(button.dataset.value);await game.settings.set(ID,'noticeColor',s.accent);}
+   else if(action==='preview'){
+    const value=/^[1-9]\d{0,11}$/.test(s.amount)?Number(s.amount):1250,before=this.service.balance().balance,delta=s.direction==='credit'?value:-Math.min(value,before);
+    this.notifications.enqueue({direction:s.direction,scope:'shared',accountName:'Reserva do esquadrão',senderName:game.user.name,delta,amount:Math.abs(delta),before,after:before+delta,color:s.accent,profile:s.profile,note:s.note||'Contrato concluído · esquadrão mobilizado',sequence:this.service.data.sequence+1,preview:true});return;
+   }
   }
   this.refresh();
  }
@@ -52,11 +67,10 @@ export class BankApp extends foundry.applications.api.ApplicationV2 {
  async submit(){
   const s=this.bankState;if(s.busy)return;
   try{
-   const units=amount(s.amount);ensure(s.accountId,'Selecione a conta de um jogador.');
-   ensure(s.direction==='credit'||units<=this.service.balance(s.accountId).balance,'Saldo de mana insuficiente.');
-   s.busy=true;s.status=null;await this.render();
-   const receipt=await this.service.request({accountId:s.accountId,direction:s.direction,amount:units,note:s.note,color:s.accent,revision:s.revision});
-   s.amount='';s.note='';s.status={text:`${formatMana(receipt.amount)} mana ${receipt.delta>0?'adicionada à':'removida da'} conta.`};
+   const units=amount(s.amount);ensure(s.direction==='credit'||units<=this.service.balance().balance,'Saldo de mana insuficiente.');
+   const revision=s.revision;s.busy=true;s.status=null;await this.render();
+   const receipt=await this.service.request({accountId:'shared',direction:s.direction,amount:units,note:s.note,color:s.accent,profile:s.profile,revision});
+   s.amount='';s.note='';s.status={text:`${formatMana(receipt.amount)} mana ${receipt.delta>0?'adicionada à':'removida da'} reserva do grupo.`};
   }catch(error){s.status={text:error.message,error:true};}
   finally{s.busy=false;this.refresh();}
  }

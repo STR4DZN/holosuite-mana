@@ -1,5 +1,17 @@
 # Histórico
 
+## 2.0.0
+
+- Reserva única de mana compartilhada; todos os pilotos gastam do mesmo saldo.
+- Saldo inicial zero, sem importação ou migração de dinheiro.
+- Redesenho completo Hollow Switch: terminal tático grafite/âmbar, diagrama vetorial e navegação em duas abas.
+- Histórico filtrável e paginado, valores rápidos, descrição e responsável por operação.
+- Motion de entrada, respostas de interação e contagem do saldo na janela.
+- Nova sequência de aviso com recorte, varredura, sinais direcionais, confirmação em etapas e selo.
+- Cor livre por operação e perfis Cinemática / Tática para o mestre.
+- Revisão global impede gastos simultâneos de sobrescrever a reserva.
+- 30 testes Node e 28 cenários Chromium, incluindo três clientes independentes.
+
 ## 1.0.3
 
 - Corrige o requisito mínimo do HoloSuite Core para 1.0.12 no manifesto.

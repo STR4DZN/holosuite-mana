@@ -9,7 +9,7 @@ assert m['relationships']['requires'][0]['compatibility']['minimum']=='1.0.12'
 m.update(url=url,manifest=url+'/releases/latest/download/module.json',download=url+'/releases/download/v'+m['version']+'/module.zip')
 out=root/'dist';out.mkdir(exist_ok=True)
 manifest=(json.dumps(m,ensure_ascii=False,indent=2)+'\n').encode();(out/'module.json').write_bytes(manifest)
-files=[root/n for n in ['README.md','CHANGELOG.md','LICENSE']]+sorted((root/'scripts').glob('*.js'))+sorted((root/'styles').glob('*.css'))
+files=[root/n for n in ['README.md','CHANGELOG.md','LICENSE','docs/design-research.md']]+sorted((root/'scripts').glob('*.js'))+sorted((root/'styles').glob('*.css'))
 with zipfile.ZipFile(out/'module.zip','w',zipfile.ZIP_DEFLATED) as z:
  z.writestr('module.json',manifest)
  for path in files:z.write(path,str(path.relative_to(root)))
