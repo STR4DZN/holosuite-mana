@@ -2,7 +2,7 @@ import {ID,amount,color,DEBIT_COLOR,formatMana,ensure} from './core.js';
 import {activeGM} from './service.js';
 import {bankView} from './view.js';
 export class BankApp extends foundry.applications.api.ApplicationV2 {
- static DEFAULT_OPTIONS={id:'holosuite-mana-bank',classes:['mb-app'],window:{title:'Hollow Switch · Reserva de mana',icon:'fa-solid fa-building-columns',resizable:true},position:{width:1060,height:840}};
+ static DEFAULT_OPTIONS={id:'holosuite-mana-bank',classes:['mb-app'],window:{title:'Banco de Mana · Reserva de mana',icon:'fa-solid fa-building-columns',resizable:true},position:{width:1060,height:840}};
  constructor(service,notifications,options={}){
   super(options);this.service=service;this.notifications=notifications;
   this.bankState={tab:'reserve',historyFilter:'all',page:0,profile:'cinematic',direction:game.user.isGM?'credit':'debit',accent:color(game.settings.get(ID,'noticeColor')),amount:'',note:'',status:null,busy:false,revision:0};
@@ -63,7 +63,7 @@ export class BankApp extends foundry.applications.api.ApplicationV2 {
    else if(action==='color'){s.accent=color(button.dataset.value);await game.settings.set(ID,'noticeColor',s.accent);}
    else if(action==='preview'){
     const value=/^[1-9]\d{0,11}$/.test(s.amount)?Number(s.amount):1250,before=this.service.balance().balance,delta=s.direction==='credit'?value:-Math.min(value,before);
-    this.notifications.enqueue({direction:s.direction,scope:'shared',accountName:'Reserva do esquadrão',senderName:game.user.name,delta,amount:Math.abs(delta),before,after:before+delta,color:s.accent,profile:s.profile,note:s.note||'Contrato concluído · esquadrão mobilizado',sequence:this.service.data.sequence+1,preview:true});return;
+    this.notifications.enqueue({direction:s.direction,scope:'shared',accountName:'Saldo de todos os jogadores',senderName:game.user.name,delta,amount:Math.abs(delta),before,after:before+delta,color:s.accent,profile:s.profile,note:s.note||'Recompensa do grupo',sequence:this.service.data.sequence+1,preview:true});return;
    }
   }
   this.refresh();

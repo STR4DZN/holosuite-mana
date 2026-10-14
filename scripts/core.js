@@ -1,7 +1,7 @@
 export const ID='holosuite-mana';
 export const MAX_MANA=999999999999;
 export const CREDIT_COLOR='#ffbe62',DEBIT_COLOR='#ff647c';
-export const POOL_ID='shared',POOL_NAME='Reserva do esquadrão';
+export const POOL_ID='shared',POOL_NAME='Saldo de todos os jogadores';
 export const ensure=(condition,message)=>{if(!condition)throw new Error(message);};
 export const escapeHTML=value=>String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 export const formatMana=value=>new Intl.NumberFormat('pt-BR',{maximumFractionDigits:0}).format(value);
@@ -24,7 +24,7 @@ export function account(data){
 }
 export function transact(current,request,{sender,requestId,chatId,now=Date.now()}={}){
  const input=ledger(current);ensure(sender?.active,'O solicitante não está conectado.');
- ensure(sender.isGM||sender.role>0,'Você não tem acesso à reserva do esquadrão.');
+ ensure(sender.isGM||sender.role>0,'Você não tem acesso à reserva do grupo.');
  ensure(!request.accountId||request.accountId===POOL_ID,'Atualize o aplicativo: agora existe uma única reserva compartilhada.');
  ensure(request.direction==='debit'||request.direction==='credit','Operação inválida.');
  ensure(sender.isGM||request.direction==='debit','Somente o mestre pode adicionar mana.');
@@ -50,5 +50,5 @@ export class SerialQueue {
  run(task){const result=this.tail.then(task);this.tail=result.catch(()=>{});return result;}
 }
 export function receiptHTML(r){
- return `<article class="mb-chat" style="--mb-accent:${color(r.color)}"><header><span>◈</span> HOLLOW SWITCH / MANA</header><p><strong>${escapeHTML(r.accountName)}</strong> ${r.delta>0?'ganhou':'perdeu'} <b>${formatMana(r.amount)} mana</b>.</p><div class="mb-chat-balance">Saldo: <strong>${formatMana(r.after)} mana</strong></div>${r.senderName?`<small>Operação: ${escapeHTML(r.senderName)}</small>`:''}${r.note?`<small>${escapeHTML(r.note)}</small>`:''}</article>`;
+ return `<article class="mb-chat" style="--mb-accent:${color(r.color)}"><header><span>◈</span> BANCO DE MANA</header><p><strong>${escapeHTML(r.accountName)}</strong> ${r.delta>0?'ganhou':'perdeu'} <b>${formatMana(r.amount)} mana</b>.</p><div class="mb-chat-balance">Saldo: <strong>${formatMana(r.after)} mana</strong></div>${r.senderName?`<small>Operação: ${escapeHTML(r.senderName)}</small>`:''}${r.note?`<small>${escapeHTML(r.note)}</small>`:''}</article>`;
 }

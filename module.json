@@ -1,8 +1,8 @@
 {
   "id": "holosuite-mana",
-  "title": "HoloSuite · Hollow Switch",
-  "description": "Reserva compartilhada de mana do esquadrão, controle do mestre e avisos SciFi/Cyberpunk sincronizados.",
-  "version": "2.0.0",
+  "title": "Banco de Mana",
+  "description": "Banco compartilhado de mana para todos os jogadores, com controle do mestre e avisos SciFi/Cyberpunk.",
+  "version": "2.1.0",
   "authors": [
     {
       "name": "STR4DZN"
@@ -18,20 +18,9 @@
   "styles": [
     "styles/bank.css"
   ],
-  "relationships": {
-    "requires": [
-      {
-        "id": "holosuite-core",
-        "type": "module",
-        "compatibility": {
-          "minimum": "1.0.12"
-        }
-      }
-    ]
-  },
   "url": "https://github.com/STR4DZN/holosuite-mana",
   "manifest": "https://github.com/STR4DZN/holosuite-mana/releases/latest/download/module.json",
-  "download": "https://github.com/STR4DZN/holosuite-mana/releases/download/v2.0.0/module.zip",
+  "download": "https://github.com/STR4DZN/holosuite-mana/releases/download/v2.1.0/module.zip",
   "license": "MIT",
   "readme": "README.md"
 }

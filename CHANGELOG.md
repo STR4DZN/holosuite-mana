@@ -1,10 +1,19 @@
 # Histórico
 
+## 2.1.0
+
+- Nome Banco de Mana em todas as telas, avisos, chat e manifesto.
+- Remove todas as dependências e a integração obrigatória com HoloSuite.
+- Acesso nativo pelo botão Banco de Mana na aba Configurações e pelo menu Abrir banco.
+- Cartão de saldo maior, ocupando a largura principal, com chip e identificação de conta compartilhada.
+- Controles de movimentação abaixo do cartão.
+- Testes de abertura com somente o banco instalado, tanto para mestre quanto para jogadores.
+
 ## 2.0.0
 
 - Reserva única de mana compartilhada; todos os pilotos gastam do mesmo saldo.
 - Saldo inicial zero, sem importação ou migração de dinheiro.
-- Redesenho completo Hollow Switch: terminal tático grafite/âmbar, diagrama vetorial e navegação em duas abas.
+- Redesenho completo Banco de Mana: terminal tático grafite/âmbar, diagrama vetorial e navegação em duas abas.
 - Histórico filtrável e paginado, valores rápidos, descrição e responsável por operação.
 - Motion de entrada, respostas de interação e contagem do saldo na janela.
 - Nova sequência de aviso com recorte, varredura, sinais direcionais, confirmação em etapas e selo.

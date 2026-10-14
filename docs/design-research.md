@@ -1,4 +1,4 @@
-# Direção visual · Hollow Switch
+# Direção visual · Banco de Mana
 
 Brief: banco do esquadrão em Foundry 13. Uma reserva compartilhada, jogador gasta, mestre adiciona/remove, aviso de movimentação para todos e recibo no chat. SciFi/Cyberpunk/Lancer com saldo imediatamente visível e pouca navegação.
 
