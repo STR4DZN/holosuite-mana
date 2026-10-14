@@ -8,7 +8,7 @@ assert not any(m.get('relationships',{}).values()), 'O banco não deve declarar 
 m.update(url=url,manifest=url+'/releases/latest/download/module.json',download=url+'/releases/download/v'+m['version']+'/module.zip')
 out=root/'dist';out.mkdir(exist_ok=True)
 manifest=(json.dumps(m,ensure_ascii=False,indent=2)+'\n').encode();(out/'module.json').write_bytes(manifest)
-files=[root/n for n in ['README.md','CHANGELOG.md','LICENSE','docs/design-research.md']]+sorted((root/'scripts').glob('*.js'))+sorted((root/'styles').glob('*.css'))+sorted((root/'assets').glob('*.svg'))
+files=[root/n for n in ['README.md','CHANGELOG.md','LICENSE','docs/design-research.md','docs/motion-design.md']]+sorted((root/'scripts').glob('*.js'))+sorted((root/'styles').glob('*.css'))+sorted((root/'assets').glob('*.svg'))
 with zipfile.ZipFile(out/'module.zip','w',zipfile.ZIP_DEFLATED) as z:
  z.writestr('module.json',manifest)
  for path in files:z.write(path,str(path.relative_to(root)))
@@ -19,5 +19,7 @@ with zipfile.ZipFile(out/'module.zip') as z:
 assert (root/'Banco-Mana-Preview.html').is_file()
 (out/'Banco-Mana-Preview.html').write_bytes((root/'Banco-Mana-Preview.html').read_bytes())
 (out/'release-notes.md').write_bytes((root/'docs/release-notes.md').read_bytes())
-(out/'SHA256SUMS.txt').write_text(''.join(hashlib.sha256((out/name).read_bytes()).hexdigest()+'  '+name+'\n' for name in ['module.json','module.zip','Banco-Mana-Preview.html']))
+artifacts=['module.json','module.zip','Banco-Mana-Preview.html']
+if (out/'Banco-Mana-Animacao.mp4').is_file():artifacts.append('Banco-Mana-Animacao.mp4')
+(out/'SHA256SUMS.txt').write_text(''.join(hashlib.sha256((out/name).read_bytes()).hexdigest()+'  '+name+'\n' for name in artifacts))
 print(json.dumps({'version':m['version'],'package_bytes':(out/'module.zip').stat().st_size,'files':len(files)+1,'integrity':'OK'},indent=2))

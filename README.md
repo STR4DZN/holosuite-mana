@@ -37,7 +37,7 @@ Cada alteração confirmada cria **exatamente uma mensagem pública**, com o ali
 
 Não há nome de jogador/mestre, descrição ou mensagens de solicitação/confirmação no chat. Limpar o histórico não gera mensagem financeira. Solicitações recusadas não publicam débito ou crédito.
 
-Os avisos centrais e animações continuam sendo mostrados aos clientes conectados, com a cor escolhida pelo mestre. O saldo real é salvo antes da animação. O novo aviso destaca o saldo compartilhado em contagem e a alteração exata em separado, com fluxo de entrada/saída, circuito do banco e confirmação. A contagem termina em aproximadamente 1,34 segundo; frames atrasados ou indisponíveis usam o tempo decorrido para alcançar o valor correto. Um efeito visual indisponível não interrompe contagem ou encerramento. Efeitos são removidos ao terminar, e a preferência de movimento reduzido interrompe os efeitos em andamento e mostra os valores finais.
+Os avisos centrais e animações continuam sendo mostrados aos clientes conectados, com a cor escolhida pelo mestre. O saldo real é salvo antes da animação. O aviso destaca a alteração (**+2.000 / −2.000**) em contagem linear de 1,9 segundo e mantém a reserva anterior e o saldo confirmado abaixo. O novo HUD tem tipografia dominante, recortes, textura, instrumento da reserva, sinais e confirmação. A contagem principal desenha números completos em OffscreenCanvas/Worker, com relógio próprio. Se esse recurso não estiver disponível, usa 121 quadros animados pelo navegador; há uma alternativa textual para ambientes sem efeitos. O contador é independente da movimentação financeira. A cor escolhida pelo mestre continua sendo respeitada; o novo acento padrão é vermelho tático, com texto claro e sinais auxiliares menta. Efeitos são removidos ao terminar, e a preferência de movimento reduzido interrompe os efeitos em andamento e mostra os valores finais.
 
 ## Consistência
 
@@ -75,11 +75,13 @@ npx playwright install chromium
 node docs/test-preview.mjs
 node docs/test-native.mjs
 node docs/test-regressions.mjs
+node docs/test-motion.mjs
+node docs/record-motion.mjs # requer ffmpeg, gera a demonstração MP4
 ```
 
-`HV_CHROMIUM_PATH` aceita um Chromium já instalado. `Banco-Mana-Preview.html` usa dados fictícios e não altera o mundo.
+`HV_CHROMIUM_PATH` aceita um Chromium já instalado. `Banco-Mana-Preview.html` usa dados fictícios e não altera o mundo. A release também inclui `Banco-Mana-Animacao.mp4`, captura real de ganho e gasto no componente. A [direção de motion e referências](docs/motion-design.md) descreve a sequência e seus limites.
 
-Validação: **54 testes Node**, **17 cenários da prévia**, **17 cenários com três clientes independentes** e **11 cenários de regressão visual/temporal** importando o código real sob contratos simulados do Foundry 13 e HoloSuite. Inclui registro tardio do app, ausência do botão antigo, uma mensagem por pagamento, limpeza cancelada/confirmada, saldo preservado, recusa de pedidos forjados, concorrência, mestre offline e falhas de persistência/chat. A sessão licenciada real ainda precisa ser validada; o manifesto não declara `verified`.
+Validação: **56 testes Node**, **17 cenários da prévia**, **17 cenários com três clientes independentes** **11 cenários de regressão visual/temporal** e **7 cenários dedicados à contagem/motion** importando o código real sob contratos simulados do Foundry 13 e HoloSuite. Inclui registro tardio do app, ausência do botão antigo, uma mensagem por pagamento, limpeza cancelada/confirmada, saldo preservado, recusa de pedidos forjados, concorrência, mestre offline e falhas de persistência/chat. A sessão licenciada real ainda precisa ser validada; o manifesto não declara `verified`.
 
 ## API
 

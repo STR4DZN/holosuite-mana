@@ -5,7 +5,7 @@ def js(name):
  s=(root/'scripts'/name).read_text()
  s=re.sub(r'^import .*?;\n','',s,flags=re.M)
  return re.sub(r'\bexport (?=(?:const|class|function|async))','',s)
-prelude='\n'.join(js(name) for name in ['core.js','icons.js'])+'\nconst e=escapeHTML;\n'+'\n'.join(js(name) for name in ['notifications.js','view.js'])
+prelude='\n'.join(js(name) for name in ['core.js','icons.js'])+'\nconst e=escapeHTML;\n'+'\n'.join(js(name) for name in ['counter.js','notifications.js','view.js'])
 harness=(root/'docs/preview-harness.js').read_text();a,b=harness.split('// UI_CLASS_BOUNDARY')
 code=prelude+'\n'+a+'\n'+js('ui.js')+'\n'+b
 css=(root/'styles/bank.css').read_text()

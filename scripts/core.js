@@ -1,6 +1,6 @@
 export const ID='holosuite-mana';
 export const MAX_MANA=999999999999;
-export const CREDIT_COLOR='#ffbe62',DEBIT_COLOR='#ff647c';
+export const CREDIT_COLOR='#ff435c',DEBIT_COLOR='#ff647c';
 export const POOL_ID='shared',POOL_NAME='Saldo de todos os jogadores';
 export const ensure=(condition,message)=>{if(!condition)throw new Error(message);};
 export const escapeHTML=value=>String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));

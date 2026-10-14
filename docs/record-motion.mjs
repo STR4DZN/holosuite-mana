@@ -1,0 +1,14 @@
+// Capture the actual browser animation, including its independent numeric canvas.
+import {createRequire} from 'node:module';import {mkdir,writeFile,rm} from 'node:fs/promises';import {execFileSync} from 'node:child_process';import {fileURLToPath} from 'node:url';import path from 'node:path';import os from 'node:os';
+const require=createRequire(import.meta.url),{chromium}=require(process.env.CODEX_PRIMARY_RUNTIME_NODE_MODULES?process.env.CODEX_PRIMARY_RUNTIME_NODE_MODULES+'/playwright':'playwright'),root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..'),temp=path.join(os.tmpdir(),'mana-motion-'+Date.now());await mkdir(temp,{recursive:true});await mkdir(root+'/dist',{recursive:true});
+const browser=await chromium.launch({headless:true,executablePath:process.env.HV_CHROMIUM_PATH,args:['--no-sandbox','--disable-gpu','--disable-dev-shm-usage']}),page=await browser.newPage({viewport:{width:1280,height:800}}),client=await page.context().newCDPSession(page),frames=[],writes=[];
+client.on('Page.screencastFrame',event=>{const name=path.join(temp,String(frames.length).padStart(6,'0')+'.jpg');frames.push({name,time:event.metadata.timestamp});writes.push(writeFile(name,Buffer.from(event.data,'base64')));client.send('Page.screencastFrameAck',{sessionId:event.sessionId}).catch(()=>{});});
+try{
+ await page.goto('file://'+root+'/Banco-Mana-Preview.html');await page.waitForFunction(()=>globalThis.bankPreview);await page.waitForTimeout(1200);await client.send('Page.startScreencast',{format:'jpeg',quality:88,maxWidth:1280,maxHeight:800,everyNthFrame:1});await page.waitForTimeout(300);
+ await page.evaluate(()=>bankPreview.notifications.enqueue({direction:'credit',before:12840,after:14840,amount:2000,delta:2000,color:'#ff435c',profile:'tactical',sequence:47,note:'Contrato concluído · Recompensa do esquadrão'}));await page.waitForTimeout(4300);
+ await page.evaluate(()=>bankPreview.notifications.enqueue({direction:'debit',before:14840,after:12840,amount:2000,delta:-2000,color:'#ac91ff',profile:'tactical',sequence:48,note:'Reabastecimento · Compra de suprimentos'}));await page.waitForTimeout(4300);await client.send('Page.stopScreencast');await Promise.all(writes);
+ if(frames.length<80)throw Error('Poucos quadros para avaliar a animação');
+ const timeline=frames.map((f,i)=>`file '${f.name}'\nduration ${Math.max(.008,(frames[i+1]?.time??f.time+1/60)-f.time).toFixed(6)}`).join('\n');await writeFile(temp+'/timeline.txt',timeline+`\nfile '${frames.at(-1).name}'\n`);
+ execFileSync('ffmpeg',['-loglevel','error','-y','-f','concat','-safe','0','-i',temp+'/timeline.txt','-vf','crop=960:600:160:100,fps=60,format=yuv420p','-c:v','libx264','-preset','fast','-crf','20','-movflags','+faststart',root+'/dist/Banco-Mana-Animacao.mp4']);
+ console.log(JSON.stringify({frames:frames.length,seconds:frames.at(-1).time-frames[0].time,output:'dist/Banco-Mana-Animacao.mp4'}));
+}finally{await browser.close();await rm(temp,{recursive:true,force:true});}

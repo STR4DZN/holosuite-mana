@@ -1,5 +1,15 @@
 # Histórico
 
+## 2.4.0
+
+- Novo HUD de transferência: alteração de mana dominante, recortes, instrumento da reserva, textura, sinais, waveform e confirmação em etapas.
+- Novo acento padrão vermelho tático; preserva a escolha de cor do mestre.
+- Contagem da própria alteração com números completos de 0 a +/−valor; reserva anterior e saldo confirmado ficam separados.
+- OffscreenCanvas em Worker, com renderização independente da interface. Fallback com 121 quadros inteiros por transform e alternativa textual.
+- Contagem linear de 1,9s dentro do aviso padrão de 4s; mantém opção imersiva de 4,6s e movimento reduzido.
+- Demonstração MP4 gravada no navegador; referências e decisões documentadas.
+- 56 testes Node e 52 cenários Chromium, incluindo interface bloqueada por 650ms, ausência de RAF, Worker indisponível, valores máximos e limpeza dos recursos.
+
 ## 2.3.1
 
 - Corrige eco de solicitações nas flags completas: confirmação deixa de recolocar pedidos recebidos na fila.
