@@ -33,7 +33,7 @@ export class BankApp extends foundry.applications.api.ApplicationV2 {
   const s=this.bankState;if(s.busy)return;
   if(event.target.name==='amount')s.amount=event.target.value;
   if(event.target.name==='note')s.note=event.target.value;
-  if(event.target.name==='accent'&&game.user.isGM){s.accent=color(event.target.value);this.element.querySelector('.mb-bank')?.style.setProperty('--mb-accent',s.accent);game.settings.set(ID,'noticeColor',s.accent);}
+  if(event.target.name==='accent'&&game.user.isGM){s.accent=color(event.target.value);this.element.querySelector('.mb-custom-color')?.style.setProperty('--mb-picked-color',s.accent);for(const button of this.element.querySelectorAll('.mb-swatches>button'))button.setAttribute('aria-pressed',String(button.dataset.value.toLowerCase()===s.accent));game.settings.set(ID,'noticeColor',s.accent);}
  }
  async onClick(event){
   const button=event.target.closest('[data-mb]');if(!button||this.bankState.busy||button.disabled)return;

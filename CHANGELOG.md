@@ -1,5 +1,11 @@
 # Histórico
 
+## 1.0.2
+
+- A cor da notificação é independente da paleta do banco; controles continuam legíveis com preto e cores escuras.
+- Tipografia dos valores do aviso preserva contraste com todas as cores personalizadas.
+- 31 testes Node e 27 cenários Chromium.
+
 ## 1.0.1
 
 - Isola falhas de janela/animação para que não alterem a confirmação do saldo.
@@ -18,4 +24,4 @@
 - Recibo público no chat e recuperação de registros pendentes.
 - Autoridade de mestre, fila, revisões, idempotência e validação do remetente.
 - Preferência de movimento reduzido e limpeza de todos os efeitos ao terminar.
-- 29 testes Node e 26 cenários Chromium, incluindo três clientes independentes.
+- 29 testes Node e 27 cenários Chromium, incluindo três clientes independentes.
