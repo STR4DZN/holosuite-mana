@@ -1,5 +1,14 @@
 # Histórico
 
+## 2.3.0
+
+- Integração de compras com Máquina de Lanches 0.5.0 no saldo compartilhado.
+- Reserva persistente, plano de entrega imutável e recuperação idempotente após falhas.
+- Preço autoritativo, validação de saldo/estoque e bloqueio de edições enquanto há reserva.
+- Um débito, aviso e mensagem por compra paga; entrega gratuita sem mensagem financeira.
+- Mantém instalação sem dependências obrigatórias, app do celular e limpeza do histórico.
+- 47 testes Node e 33 cenários Chromium, além da integração no repositório da máquina.
+
 ## 2.2.0
 
 - Banco de Mana registrado como app do celular HoloSuite para mestre e jogadores.

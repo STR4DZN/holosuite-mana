@@ -18,12 +18,15 @@ Hooks.once('init',()=>{
  game.settings.register(ID,'reduceMotion',{name:'Banco de Mana: reduzir movimentos',hint:'Mantém os avisos e valores finais com menos movimento.',scope:'client',config:true,type:Boolean,default:false,onChange:()=>{app?.motionPreferenceChanged();notices?.reduceCurrent();}});
  Hooks.on('holosuite-core.apiReady',registerPhone);
  game.modules.get(ID).api=Object.freeze({open,getBalance:()=>service.balance().balance,
+  registerPurchaseProvider:(id,provider)=>{service.purchases.register(id,provider);if(game.user.isGM)service.retryChats();},
+  purchase:payload=>service.request({...payload,action:'purchase',revision:service.balance().revision}),
+  hasPendingPurchase:(provider,sceneId,regionId)=>Object.values(service.purchases.entries).some(p=>p.status==='reserved'&&p.provider===provider&&p.data?.sceneId===sceneId&&p.data?.regionId===regionId),
   clearHistory:()=>service.request({action:'clearHistory',revision:service.balance().revision}),
   debit:(value,{note='',color,profile}={})=>service.request({direction:'debit',amount:value,note,color,profile,revision:service.balance().revision}),
   credit:(value,{note='',color,profile}={})=>service.request({direction:'credit',amount:value,note,color,profile,revision:service.balance().revision})});
 });
 Hooks.once('ready',()=>{
  notices=new ManaNotifications({reduced:()=>game.settings.get(ID,'reduceMotion')});service.onTransaction=r=>notices.enqueue(r);service.install();
- registerPhone();
+ registerPhone();Hooks.callAll('mana-bank.ready',game.modules.get(ID).api);
  matchMedia('(prefers-reduced-motion: reduce)').addEventListener('change',()=>app?.motionPreferenceChanged());
 });

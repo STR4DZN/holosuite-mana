@@ -1,7 +1,8 @@
+import {BankPurchases} from './purchases.js';
 import {ID,ensure,ledger,emptyLedger,account,transact,clearHistory,SerialQueue,receiptHTML} from './core.js';
 export const activeGM=()=>game.users.activeGM;
 export class BankService {
- constructor(){this.queue=new SerialQueue();this.pending=new Map();this.observers=new Set();this.retryTimer=null;this.onTransaction=()=>{};this.lastSequence=0;}
+ constructor(){this.purchases=new BankPurchases(this);this.queue=new SerialQueue();this.pending=new Map();this.observers=new Set();this.retryTimer=null;this.onTransaction=()=>{};this.lastSequence=0;}
  get data(){return ledger(game.settings.get(ID,'ledger'));}
  get users(){return [...game.users].filter(u=>!u.isGM&&u.role!==0);}
  balance(){return account(this.data);}
@@ -29,6 +30,7 @@ export class BankService {
   if(game.user.id===activeGM()?.id)this.retryChats();
  }
  checkPending(data=this.data){for(const [id,p] of this.pending){
+  if(p.action==='purchase'){const purchase=data.purchases?.[id];if(purchase?.senderId===game.user.id){if(purchase.status==='complete')this.finish(id,null,purchase.delivery);else if(purchase.status==='refunded')this.finish(id,new Error(purchase.error));}continue;}
   const receipt=data.transactions.find(t=>t.requestId===id&&t.senderId===game.user.id);
   if(receipt)this.finish(id,null,receipt);
   else if(data.lastClear?.requestId===id&&data.lastClear.senderId===game.user.id)this.finish(id,null,{cleared:true,count:data.lastClear.count});
@@ -36,11 +38,11 @@ export class BankService {
  finish(id,error,receipt){const p=this.pending.get(id);if(!p)return;clearTimeout(p.timer);this.pending.delete(id);error?p.reject(error):p.resolve(receipt);}
  async request(payload){
   const gm=activeGM();ensure(gm?.active,'É necessário um mestre conectado para movimentar mana.');
-  ensure(game.user.isGM||(payload.action!=='clearHistory'&&payload.direction==='debit'),'Somente o mestre pode adicionar mana ou limpar o histórico.');
+  ensure(game.user.isGM||(payload.action==='purchase'||(payload.action!=='clearHistory'&&payload.direction==='debit')),'Somente o mestre pode adicionar mana ou limpar o histórico.');
   const id=foundry.utils.randomID(),request={...payload,id,action:payload.action||'transaction',accountId:'shared',version:3,authorityId:gm.id};
   let resolve,reject;const response=new Promise((yes,no)=>{resolve=yes;reject=no;});
   const timer=setTimeout(()=>this.finish(id,new Error('A confirmação não chegou. Confira o saldo antes de repetir.')),20000);
-  this.pending.set(id,{resolve,reject,timer,authorityId:gm.id});
+  this.pending.set(id,{resolve,reject,timer,authorityId:gm.id,action:request.action});
   try{game.user.update({[`flags.${ID}.request`]:request},{diff:false}).then(()=>this.checkPending()).catch(error=>{this.checkPending();this.finish(id,error);});}
   catch(error){this.checkPending();this.finish(id,error);}
   return response;
@@ -52,21 +54,24 @@ export class BankService {
    ensure(user.id===userId,'Solicitação de outro usuário.');
    ensure(JSON.stringify(request).length<=4096&&request.version===3&&request.authorityId===game.user.id,'Solicitação inválida.');
    const sender=game.users.get(userId);
-   if(request.action==='clearHistory'){
+   if(request.action==='purchase'){const delivery=await this.purchases.execute(request,sender);result={id:request.id,ok:true,receipt:delivery};}
+   else if(request.action==='clearHistory'){
     ensure(sender?.active&&sender.isGM,'Somente o mestre pode limpar o histórico.');
     // Flush public receipts before clearing, so a confirmed payment cannot lose its chat record.
     for(const receipt of this.data.transactions.filter(r=>!r.chatPosted))await this.postChat(receipt);
+    await this.purchases.recover();
     const output=clearHistory(this.data,request,{sender,requestId:request.id});
     if(!output.duplicate){ensure(activeGM()?.id===game.user.id,'O mestre responsável mudou.');await game.settings.set(ID,'ledger',output.ledger);}
     result={id:request.id,ok:true,receipt:{cleared:true,count:output.count}};
    }else{
-    ensure(request.action==='transaction','Operação inválida.');
+    ensure(request.action==='transaction','Operação inválida.');await this.purchases.recover();
     const output=transact(this.data,request,{sender,requestId:request.id,chatId:foundry.utils.randomID()});
     if(!output.duplicate){ensure(activeGM()?.id===game.user.id,'O mestre responsável mudou.');await game.settings.set(ID,'ledger',output.ledger);}
     result={id:request.id,ok:true,receipt:output.receipt};
     try{await this.postChat(output.receipt);}catch(error){console.warn('Banco de Mana: saldo salvo; chat pendente.',error);this.scheduleRetry();}
    }
   }catch(error){
+   if(this.data.purchases?.[request.id]?.status==='reserved'){this.scheduleRetry();return;}
    const committed=this.data.transactions.find(t=>t.requestId===request.id&&t.senderId===userId),cleared=this.data.lastClear;
    if(committed){result={id:request.id,ok:true,receipt:committed};this.scheduleRetry();}
    else if(cleared?.requestId===request.id&&cleared.senderId===userId)result={id:request.id,ok:true,receipt:{cleared:true,count:cleared.count}};
@@ -85,6 +90,7 @@ export class BankService {
  scheduleRetry(){clearTimeout(this.retryTimer);this.retryTimer=setTimeout(()=>this.retryChats(),10000);}
  retryChats(){return this.queue.run(async()=>{
   if(game.user.id!==activeGM()?.id)return;
+  try{await this.purchases.recover();}catch(error){this.scheduleRetry();return;}
   for(const receipt of this.data.transactions.filter(t=>!t.chatPosted)){try{await this.postChat(receipt);}catch(error){console.warn('Banco de Mana: registro pendente.',error);this.scheduleRetry();break;}}
  });}
 }

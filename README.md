@@ -49,7 +49,17 @@ Os avisos centrais e animações continuam sendo mostrados aos clientes conectad
 - Uma autoridade de mestre e uma fila serializam pagamentos e limpeza. Revisões globais rejeitam operações obsoletas, e IDs evitam repetição da mesma solicitação.
 - Limpar o histórico mantém a sequência de operações e avança a revisão, impedindo replay de solicitações anteriores sem alterar o saldo.
 - Falha ao salvar não confirma ganho/perda. Chat indisponível após a gravação conserva o recibo e tenta publicá-lo com ID fixo, sem duplicar saldo, aviso ou mensagem.
-- A janela conserva cerca de 300 registros recentes, mais recibos pendentes, até o mestre limpar. Não depende de personagem, token ou cena. Não desconta automaticamente compras da Máquina de Lanches.
+- A janela conserva cerca de 300 registros recentes, mais recibos pendentes, até o mestre limpar. Não depende de personagem, token ou cena. Compras da Máquina de Lanches 0.5.0 ou posterior descontam deste saldo.
+
+## Compras no mapa
+
+Com **Máquina de Lanches 0.5.0 ou posterior**, o jogador dá duplo clique na área da máquina e compra usando este saldo compartilhado. Não precisa abrir o banco nem selecionar um token. Preços são quantidades inteiras de mana.
+
+O mestre responsável valida preço, estoque e saldo. A compra reserva mana no banco, grava estoque e recibo juntos na região e conclui o registro financeiro. Cada compra paga produz um único débito, aviso e mensagem pública. Produtos gratuitos não geram alteração financeira.
+
+Como banco e região são documentos distintos, uma interrupção conserva uma reserva pendente. A recuperação usa o mesmo ID, preço e produto sorteado, sem cobrar ou entregar novamente. Novas movimentações aguardam essa recuperação; mantenha ambos os módulos ativos e um mestre conectado até concluir. Uma validação definitiva que impeça a entrega restitui a reserva. Não se trata de uma transação atômica entre documentos.
+
+O módulo continua sem dependências obrigatórias no manifesto. A integração não importa nem converte outros saldos.
 
 ## Desenvolvimento e validação
 
@@ -68,7 +78,7 @@ node docs/test-native.mjs
 
 `HV_CHROMIUM_PATH` aceita um Chromium já instalado. `Banco-Mana-Preview.html` usa dados fictícios e não altera o mundo.
 
-Validação: **36 testes Node**, **17 cenários da prévia** e **16 cenários com três clientes independentes** importando o código real sob contratos simulados do Foundry 13 e HoloSuite. Inclui registro tardio do app, ausência do botão antigo, uma mensagem por pagamento, limpeza cancelada/confirmada, saldo preservado, recusa de pedidos forjados, concorrência, mestre offline e falhas de persistência/chat. A sessão licenciada real ainda precisa ser validada; o manifesto não declara `verified`.
+Validação: **47 testes Node**, **17 cenários da prévia** e **16 cenários com três clientes independentes** importando o código real sob contratos simulados do Foundry 13 e HoloSuite. Inclui registro tardio do app, ausência do botão antigo, uma mensagem por pagamento, limpeza cancelada/confirmada, saldo preservado, recusa de pedidos forjados, concorrência, mestre offline e falhas de persistência/chat. A sessão licenciada real ainda precisa ser validada; o manifesto não declara `verified`.
 
 ## API
 
@@ -80,6 +90,8 @@ await bank.debit(150, {note: 'Suprimentos'});
 await bank.credit(500, {note: 'Recompensa', color: '#ad8aff'}); // mestre
 await bank.clearHistory(); // mestre; limpa registros da janela e mantém saldo/chat
 ```
+
+Para integrações, `registerPurchaseProvider(id, {withLock, prepare, apply, findReceipt})` registra um provedor no mestre; `purchase(payload)` envia a solicitação autenticada; `hasPendingPurchase(provider, sceneId, regionId)` permite impedir edições durante a confirmação. O hook `mana-bank.ready` anuncia a API. O provedor calcula o preço no mestre e deve gravar estoque e recibo com o mesmo ID; falhas de gravação ambíguas devem permanecer recuperáveis.
 
 O identificador técnico foi preservado para manter o saldo já criado no banco. As mesmas permissões são verificadas no serviço autoritativo.
 
