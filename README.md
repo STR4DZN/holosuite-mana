@@ -51,7 +51,7 @@ node docs/test-native.mjs
 
 `HV_CHROMIUM_PATH` permite usar um Chromium já instalado. `Banco-Mana-Preview.html` é uma prévia local autocontida com dados de exemplo; não se conecta ao Foundry e não altera o mundo.
 
-**Validação:** 29 testes Node do motor e serviço; 14 cenários da prévia; 12 cenários com três clientes de navegador independentes, importando o ponto de entrada real do módulo e contratos simulados do Foundry 13/HoloSuite. Foram inspecionados saldo, tela do mestre, cores e quadros da animação. Cobertura inclui concorrência, permissões, falha de persistência/chat, recuperação, mestre offline e notificações em todos os clientes. Esses testes não substituem instalação numa sessão licenciada real do Foundry 13. O manifesto não declara uma versão `verified` sem esse teste.
+**Validação:** 31 testes Node do motor e serviço; 14 cenários da prévia; 12 cenários com três clientes de navegador independentes, importando o ponto de entrada real do módulo e contratos simulados do Foundry 13/HoloSuite. Foram inspecionados saldo, tela do mestre, cores e quadros da animação. Cobertura inclui concorrência, permissões, falha de persistência/chat, recuperação, mestre offline e notificações em todos os clientes. Esses testes não substituem instalação numa sessão licenciada real do Foundry 13. O manifesto não declara uma versão `verified` sem esse teste.
 
 ## API
 

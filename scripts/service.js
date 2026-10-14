@@ -7,10 +7,10 @@ export class BankService {
  balance(userId=game.user.id){return account(this.data,userId);}
  subscribe(fn){this.observers.add(fn);return ()=>this.observers.delete(fn);}
  changed(value){
-  const data=ledger(value);for(const fn of this.observers)fn();
+  const data=ledger(value);for(const fn of this.observers){try{fn();}catch(error){console.warn('Banco Mana: falha ao atualizar uma janela.',error);}}
   const newReceipts=data.transactions.filter(t=>t.sequence>this.lastSequence).sort((a,b)=>a.sequence-b.sequence);
   this.lastSequence=Math.max(this.lastSequence,data.sequence);
-  for(const receipt of newReceipts)this.onTransaction(structuredClone(receipt));
+  for(const receipt of newReceipts){try{this.onTransaction(structuredClone(receipt));}catch(error){console.warn('Banco Mana: falha no aviso visual; o saldo foi preservado.',error);}}
   this.checkPending(data);
  }
  register(){game.settings.register(ID,'ledger',{scope:'world',config:false,type:Object,default:emptyLedger(),onChange:value=>this.changed(value)});}
@@ -38,7 +38,7 @@ export class BankService {
   return new Promise((resolve,reject)=>{
    const timer=setTimeout(()=>this.finish(message.id,new Error('A confirmação não chegou. Confira o saldo e o chat antes de repetir.')),20000);
    this.pending.set(message.id,{resolve,reject,timer,authorityId:gm.id});
-   const result=message.getFlag(ID,'result');if(result)this.finish(message.id,result.ok?null:new Error(result.error),result.receipt);this.checkPending();
+   this.checkPending();const result=message.getFlag(ID,'result');if(this.pending.has(message.id)&&result)this.finish(message.id,result.ok?null:new Error(result.error),result.receipt);
   });
  }
  async process(message,request,userId){
@@ -52,7 +52,10 @@ export class BankService {
    if(!output.duplicate){ensure(activeGM()?.id===game.user.id,'O mestre responsável mudou.');await game.settings.set(ID,'ledger',output.ledger);}
    result={ok:true,receipt:output.receipt};
    try{await this.postChat(output.receipt);}catch(error){console.warn('Banco Mana: saldo salvo; recibo de chat aguardando nova tentativa.',error);this.scheduleRetry();}
-  }catch(error){result={ok:false,error:error.message};}
+  }catch(error){
+   const committed=this.data.transactions.find(t=>t.requestId===message.id&&t.senderId===userId);
+   result=committed?{ok:true,receipt:committed}:{ok:false,error:error.message};if(committed)this.scheduleRetry();
+  }
   try{await message.update({content:result.ok?'<p>Banco Mana · Movimentação confirmada.</p>':'<p>Banco Mana · Movimentação recusada.</p>',[`flags.${ID}.result`]:result});}
   catch(error){console.warn('Banco Mana: confirmação privada indisponível; o saldo permanece autoritativo.',error);}
  }

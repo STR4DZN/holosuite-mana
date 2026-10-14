@@ -1,4 +1,4 @@
-Banco Mana 1.0.0 · Foundry VTT 13 / HoloSuite.
+Banco Mana 1.0.1 · Foundry VTT 13 / HoloSuite.
 
 - Aplicativo **Banco Mana**, com ícone de banco, dentro do HoloSuite.
 - Saldo de mana exibido imediatamente; conta individual por jogador.
@@ -7,7 +7,7 @@ Banco Mana 1.0.0 · Foundry VTT 13 / HoloSuite.
 - Avisos centrais para todos: abertura do painel, anéis, partículas, varredura, contagem dos números e fechamento.
 - Registro público no chat, saldo persistente e recuperação de chat indisponível.
 - Testar aviso é local e não movimenta dinheiro.
-- 29 testes Node e 26 cenários de navegador, incluindo três clientes independentes.
+- 31 testes Node e 26 cenários de navegador, incluindo três clientes independentes.
 
 **Instalação:** cole a URL do asset `module.json` no campo URL do Manifesto do Foundry. Ative HoloSuite Core 1.0.12+ e HoloSuite · Banco Mana.
 

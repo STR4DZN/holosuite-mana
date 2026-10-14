@@ -1,5 +1,12 @@
 # Histórico
 
+## 1.0.1
+
+- Isola falhas de janela/animação para que não alterem a confirmação do saldo.
+- Reconhece movimentações persistidas mesmo quando a resposta da gravação falha.
+- Confirmações consultam o recibo persistido antes de apresentar erro de transporte.
+- 31 testes Node e 26 cenários Chromium.
+
 ## 1.0.0
 
 - Banco Mana registrado como aplicativo do HoloSuite para Foundry 13.
