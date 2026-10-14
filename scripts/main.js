@@ -9,7 +9,7 @@ function registerPhone(api){
  api=api?.registerApp?api:game.modules.get('holosuite-core')?.api;
  if(!api?.registerApp)return false;
  if(registeredApi===api&&registeredFunction===api.registerApp)return true;
- api.registerApp({id:ID,title:'Banco de Mana',icon:'fa-solid fa-building-columns',premium:false,playerVisible:true,description:'Saldo de mana compartilhado por todos os jogadores.',featureId:ID,open:()=>open().catch(error=>ui.notifications.error(error.message))});
+ api.registerApp({id:ID,title:'Banco de Mana',icon:'mb-bank-app-glyph',premium:false,playerVisible:true,description:'Saldo de mana compartilhado por todos os jogadores.',featureId:ID,open:()=>open().catch(error=>ui.notifications.error(error.message))});
  registeredApi=api;registeredFunction=api.registerApp;return true;
 }
 Hooks.once('init',()=>{

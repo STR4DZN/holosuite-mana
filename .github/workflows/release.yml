@@ -26,6 +26,7 @@ jobs:
       - run: npx playwright install --with-deps chromium
       - run: node docs/test-preview.mjs
       - run: node docs/test-native.mjs
+      - run: node docs/test-regressions.mjs
       - name: Publish versioned Foundry release
         if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
         env:

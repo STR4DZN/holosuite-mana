@@ -4,7 +4,8 @@ export const CREDIT_COLOR='#ffbe62',DEBIT_COLOR='#ff647c';
 export const POOL_ID='shared',POOL_NAME='Saldo de todos os jogadores';
 export const ensure=(condition,message)=>{if(!condition)throw new Error(message);};
 export const escapeHTML=value=>String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-export const formatMana=value=>new Intl.NumberFormat('pt-BR',{maximumFractionDigits:0}).format(value);
+const manaFormat=new Intl.NumberFormat('pt-BR',{maximumFractionDigits:0});
+export const formatMana=value=>manaFormat.format(value);
 export function amount(value){
  const raw=String(value).trim();ensure(/^[1-9]\d{0,11}$/.test(raw),'Informe uma quantidade inteira de mana maior que zero.');
  const number=Number(raw);ensure(Number.isSafeInteger(number)&&number<=MAX_MANA,'Quantidade de mana acima do limite.');return number;
@@ -40,7 +41,7 @@ export function transact(current,request,{sender,requestId,chatId,now=Date.now()
  const next=structuredClone(input);
  const receipt={requestId,chatId,senderId:sender.id,senderName:String(sender.name||'Operador').slice(0,80),accountId:POOL_ID,accountName:POOL_NAME,scope:'shared',
   direction:request.direction,amount:units,delta,before:before.balance,after,color:sender.isGM?color(request.color,delta>0?CREDIT_COLOR:DEBIT_COLOR):DEBIT_COLOR,
-  profile:sender.isGM&&request.profile==='tactical'?'tactical':'cinematic',note:String(request.note||'').trim().slice(0,120),sequence:input.sequence+1,revision:before.revision+1,createdAt:now,chatPosted:false};
+  profile:sender.isGM&&request.profile==='cinematic'?'cinematic':'tactical',note:String(request.note||'').trim().slice(0,120),sequence:input.sequence+1,revision:before.revision+1,createdAt:now,chatPosted:false};
  next.sequence=receipt.sequence;next.pool={balance:after,revision:receipt.revision};
  next.transactions=[...next.transactions.slice(-299).filter(t=>t.chatPosted),...next.transactions.filter(t=>!t.chatPosted),receipt];
  return {ledger:next,receipt,duplicate:false};

@@ -5,8 +5,8 @@ export class BankApp extends foundry.applications.api.ApplicationV2 {
  static DEFAULT_OPTIONS={id:'holosuite-mana-bank',classes:['mb-app'],window:{title:'Banco de Mana · Reserva de mana',icon:'fa-solid fa-building-columns',resizable:true},position:{width:1060,height:840}};
  constructor(service,notifications,options={}){
   super(options);this.service=service;this.notifications=notifications;
-  this.bankState={tab:'reserve',confirmClear:false,historyFilter:'all',page:0,profile:'cinematic',direction:game.user.isGM?'credit':'debit',accent:color(game.settings.get(ID,'noticeColor')),amount:'',note:'',status:null,busy:false,revision:0};
-  this.unsubscribe=null;this.timer=null;this.controller=null;this.motion=[];this.balanceFrame=null;this.previousBalance=null;this.lastTab=null;
+  this.bankState={tab:'reserve',confirmClear:false,historyFilter:'all',page:0,profile:'tactical',direction:game.user.isGM?'credit':'debit',accent:color(game.settings.get(ID,'noticeColor')),amount:'',note:'',status:null,busy:false,revision:0};
+  this.unsubscribe=null;this.timer=null;this.controller=null;this.motion=[];this.balanceFrame=null;this.previousBalance=null;this.balanceTransition=null;this.balanceTimer=null;this.lastTab=null;
  }
  async _renderHTML(){
   const s=this.bankState;if(!game.user.isGM){s.direction='debit';s.accent=DEBIT_COLOR;}
@@ -30,15 +30,19 @@ export class BankApp extends foundry.applications.api.ApplicationV2 {
     const reactor=content.querySelector('.mb-reactor-inner');if(reactor)this.motion.push(reactor.animate([{opacity:0,transform:'rotate(-25deg) scale(.8)'},{opacity:1,transform:'rotate(0) scale(1)'}],{duration:1100,easing:'cubic-bezier(.16,1,.3,1)'}));
    }
    const value=content.querySelector('.mb-balance-value'),before=this.previousBalance,after=this.service.balance().balance;
-   if(value&&before!==null&&before!==after){const start=performance.now();const tick=now=>{const t=Math.min(1,(now-start)/750);value.textContent=formatMana(Math.round(before+(after-before)*(1-(1-t)**4)));if(t<1)this.balanceFrame=requestAnimationFrame(tick);else this.balanceFrame=null;};this.balanceFrame=requestAnimationFrame(tick);}
+   if(value&&((before!==null&&before!==after)||this.balanceTransition?.target===after)){
+    if(this.balanceTransition?.target!==after)this.balanceTransition={from:before,target:after,start:performance.now()};const transition=this.balanceTransition;
+    const tick=()=>{const t=Math.min(1,(performance.now()-transition.start)/550);value.textContent=formatMana(Math.round(transition.from+(after-transition.from)*(1-(1-t)**3)));if(t>=1){clearInterval(this.balanceTimer);this.balanceTimer=null;this.balanceTransition=null;}return t;};
+    const frame=()=>{this.balanceFrame=null;if(tick()<1)try{this.balanceFrame=requestAnimationFrame(frame);}catch{}};tick();this.balanceTimer=setInterval(tick,50);try{this.balanceFrame=requestAnimationFrame(frame);}catch{}
+   }
   }
   this.previousBalance=this.service.balance().balance;this.lastTab=this.bankState.tab;
  }
- cancelMotion(){this.motion.forEach(a=>a.cancel());this.motion=[];cancelAnimationFrame(this.balanceFrame);this.balanceFrame=null;}
+ cancelMotion(){clearInterval(this.balanceTimer);this.balanceTimer=null;this.motion.forEach(a=>a.cancel());this.motion=[];cancelAnimationFrame(this.balanceFrame);this.balanceFrame=null;}
  motionPreferenceChanged(){
   const reduced=game.settings.get(ID,'reduceMotion')||matchMedia('(prefers-reduced-motion: reduce)').matches;
   this.element?.querySelector('.mb-bank')?.classList.toggle('is-reduced',reduced);
-  if(reduced){this.cancelMotion();const value=this.element?.querySelector('.mb-balance-value');if(value)value.textContent=formatMana(this.service.balance().balance);}
+  if(reduced){this.cancelMotion();this.balanceTransition=null;const value=this.element?.querySelector('.mb-balance-value');if(value)value.textContent=formatMana(this.service.balance().balance);}
  }
  _onRender(){this.motionPreferenceChanged();if(!this.unsubscribe)this.unsubscribe=this.service.subscribe(()=>this.refresh());}
  _onClose(){this.unsubscribe?.();this.unsubscribe=null;clearTimeout(this.timer);this.controller?.abort();this.cancelMotion();this.lastTab=null;}

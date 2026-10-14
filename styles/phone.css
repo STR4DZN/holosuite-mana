@@ -1,0 +1,7 @@
+/* HoloSuite's device theme uses a mask on ::before and hides the registered <i>.
+   Target only this app, including when Foundry places module CSS in a layer. */
+.mb-bank-app-glyph{display:inline-block;width:1.6em;height:1.6em;background:url('../assets/banco-mana-mark.svg') center/contain no-repeat}
+html body .holosuite-app-tile[data-holosuite-app="holosuite-mana"]{--hs-app-accent:#ffbe62!important;--hs-app-accent-rgb:255,190,98!important}
+html body :is(.holosuite-app-icon,.holosuite-whats-new-icon)[data-holosuite-app-icon="holosuite-mana"]{position:relative!important;width:38px!important;height:38px!important;flex-shrink:0;border:0!important;background:transparent!important;box-shadow:none!important;overflow:visible!important}
+html body :is(.holosuite-app-icon,.holosuite-whats-new-icon)[data-holosuite-app-icon="holosuite-mana"]::before{content:""!important;display:block!important;position:absolute!important;inset:0!important;width:100%!important;height:100%!important;background:url('../assets/banco-mana-mark.svg') center/contain no-repeat!important;mask:none!important;-webkit-mask:none!important}
+html body :is(.holosuite-app-icon,.holosuite-whats-new-icon)[data-holosuite-app-icon="holosuite-mana"]::after,html body :is(.holosuite-app-icon,.holosuite-whats-new-icon)[data-holosuite-app-icon="holosuite-mana"]>i{display:none!important}

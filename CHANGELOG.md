@@ -1,5 +1,15 @@
 # Histórico
 
+## 2.3.1
+
+- Corrige eco de solicitações nas flags completas: confirmação deixa de recolocar pedidos recebidos na fila.
+- Pacotes JSON como valor único evitam merges e atualizações parciais no transporte; mantém autenticação pelo usuário do evento.
+- Ícone SVG próprio do banco substitui a máscara genérica do HoloSuite, com CSS específico apenas deste app e arquivo incluído no ZIP.
+- Aviso novo de 4s por padrão, com opção imersiva de 4,6s. Saldo em destaque, alteração fixa, fluxo direcional, circuito e confirmação.
+- Contadores usam tempo próprio, fallback temporal e valor final exato, inclusive sem frames ou com falha em um efeito.
+- Contador do cartão conserva o início da transição entre renderizações; formatação numérica reutiliza um único formatter.
+- 54 testes Node e 45 cenários Chromium. Inclui 20 créditos consecutivos, eco de flags, ícone com máscara/cascata e falhas de animação.
+
 ## 2.3.0
 
 - Integração de compras com Máquina de Lanches 0.5.0 no saldo compartilhado.

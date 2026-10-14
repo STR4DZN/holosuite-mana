@@ -1,8 +1,9 @@
 import {BankPurchases} from './purchases.js';
 import {ID,ensure,ledger,emptyLedger,account,transact,clearHistory,SerialQueue,receiptHTML} from './core.js';
 export const activeGM=()=>game.users.activeGM;
+export function decodePacket(value){if(typeof value!=='string')return value&&typeof value==='object'?value:null;try{return JSON.parse(value);}catch{return null;}}
 export class BankService {
- constructor(){this.purchases=new BankPurchases(this);this.queue=new SerialQueue();this.pending=new Map();this.observers=new Set();this.retryTimer=null;this.onTransaction=()=>{};this.lastSequence=0;}
+ constructor(){this.purchases=new BankPurchases(this);this.queue=new SerialQueue();this.pending=new Map();this.seenRequests=new Set();this.observers=new Set();this.retryTimer=null;this.onTransaction=()=>{};this.lastSequence=0;}
  get data(){return ledger(game.settings.get(ID,'ledger'));}
  get users(){return [...game.users].filter(u=>!u.isGM&&u.role!==0);}
  balance(){return account(this.data);}
@@ -19,11 +20,15 @@ export class BankService {
   this.lastSequence=this.data.sequence;
   Hooks.on('updateUser',(user,changes,options,userId)=>{
    // Read the operation payload, never a flag left on the document by an earlier update.
-   const request=changes.flags?.[ID]?.request??changes[`flags.${ID}.request`];
+   const request=decodePacket(changes.flags?.[ID]?.request??changes[`flags.${ID}.request`]);
    if(request?.version===3&&user.id===userId&&request.authorityId===game.user.id&&game.user.isGM&&activeGM()?.id===game.user.id){
-    this.queue.run(()=>this.process(user,structuredClone(request),userId)).catch(error=>console.error('Banco de Mana:',error));
+    const key=`${userId}/${request.id}`;
+    if(!this.seenRequests.has(key)){
+     this.seenRequests.add(key);if(this.seenRequests.size>512)this.seenRequests.delete(this.seenRequests.values().next().value);
+     this.queue.run(()=>this.process(user,structuredClone(request),userId)).catch(error=>console.error('Banco de Mana:',error));
+    }
    }
-   const result=changes.flags?.[ID]?.result??changes[`flags.${ID}.result`],pending=result&&this.pending.get(result.id);
+   const result=decodePacket(changes.flags?.[ID]?.result??changes[`flags.${ID}.result`]),pending=result&&this.pending.get(result.id);
    if(user.id===game.user.id&&pending?.authorityId===userId)this.finish(result.id,result.ok?null:new Error(result.error),result.receipt);
   });
   for(const event of ['userConnected','updateUser','createUser','deleteUser'])Hooks.on(event,()=>{for(const fn of this.observers){try{fn();}catch(error){console.warn('Banco de Mana: janela indisponível.',error);}}if(game.user.id===activeGM()?.id)this.retryChats();});
@@ -43,7 +48,8 @@ export class BankService {
   let resolve,reject;const response=new Promise((yes,no)=>{resolve=yes;reject=no;});
   const timer=setTimeout(()=>this.finish(id,new Error('A confirmação não chegou. Confira o saldo antes de repetir.')),20000);
   this.pending.set(id,{resolve,reject,timer,authorityId:gm.id,action:request.action});
-  try{game.user.update({[`flags.${ID}.request`]:request},{diff:false}).then(()=>this.checkPending()).catch(error=>{this.checkPending();this.finish(id,error);});}
+  // A string is replaced as one value: Foundry cannot merge or trim fields from the packet.
+  try{game.user.update({[`flags.${ID}.request`]:JSON.stringify(request)}).then(()=>this.checkPending()).catch(error=>{this.checkPending();this.finish(id,error);});}
   catch(error){this.checkPending();this.finish(id,error);}
   return response;
  }
@@ -77,7 +83,7 @@ export class BankService {
    else if(cleared?.requestId===request.id&&cleared.senderId===userId)result={id:request.id,ok:true,receipt:{cleared:true,count:cleared.count}};
    else result={id:request.id,ok:false,error:error.message};
   }
-  try{await user.update({[`flags.${ID}.result`]:result},{diff:false});}
+  try{if(JSON.stringify(decodePacket(user.getFlag(ID,'result')))!==JSON.stringify(result))await user.update({[`flags.${ID}.result`]:JSON.stringify(result)});}
   catch(error){console.warn('Banco de Mana: confirmação indisponível; os dados salvos permanecem autoritativos.',error);}
  }
  async postChat(receipt){

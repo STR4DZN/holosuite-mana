@@ -1,12 +1,12 @@
 import test,{beforeEach,afterEach} from 'node:test';import assert from 'node:assert/strict';
-import {BankService} from '../scripts/service.js';import {ID,emptyLedger} from '../scripts/core.js';
+import {BankService,decodePacket} from '../scripts/service.js';import {ID,emptyLedger} from '../scripts/core.js';
 class Collection extends Map{[Symbol.iterator](){return this.values();}}
 let service,data,hooks,chatFail,persistFail,resultFail,publicCreates,ledgerWrites,notices,idCounter;
 const gm={id:'gm',isGM:true,active:true,name:'Mestre',role:4},player={id:'player',isGM:false,active:true,role:1,name:'Astra'},other={...player,id:'other',name:'Echo'},gm2={...gm,id:'gm2',name:'Outro mestre'};
 const request=(revision=0,changes={})=>({id:'request1',action:'transaction',version:3,authorityId:'gm',accountId:'shared',direction:'credit',amount:100,revision,...changes});
 const invoke=(name,...args)=>Promise.all((hooks.get(name)||[]).map(fn=>fn(...args)));
 const user=id=>game.users.get(id);
-async function process(req=request(),sender='gm'){await service.process(user(sender),req,sender);return user(sender).getFlag(ID,'result');}
+async function process(req=request(),sender='gm'){await service.process(user(sender),req,sender);return decodePacket(user(sender).getFlag(ID,'result'));}
 beforeEach(()=>{
  data=emptyLedger();hooks=new Map();chatFail=false;persistFail=false;resultFail=false;publicCreates=0;ledgerWrites=0;notices=[];idCounter=0;
  const users=new Collection([gm,player,other,gm2].map(base=>{const u={...base,flags:{},getFlag:(scope,key)=>u.flags[scope]?.[key],async update(change){const sender=game.user.id;if(!game.user.isGM&&sender!==u.id)throw Error('Only own user');const flags={};for(const [path,value]of Object.entries(change)){const [,scope,key]=path.split('.');if(key==='result'&&resultFail)throw Error('confirmation failed');u.flags[scope]??={};u.flags[scope][key]=structuredClone(value);flags[scope]??={};flags[scope][key]=structuredClone(value);}await invoke('updateUser',u,{flags},{},sender);return u;}};return [u.id,u];}));users.activeGM=users.get('gm');
@@ -19,7 +19,7 @@ afterEach(async()=>{await service.queue.tail;await service.queue.tail;clearTimeo
 test('uma operação cria exatamente um chat público, sem mensagem de transporte ou autor no texto',async()=>{const result=await process();assert.equal(data.pool.balance,100);assert.equal(publicCreates,1);assert.equal(game.messages.size,1);const chat=[...game.messages.values()][0];assert.match(chat.content,/\+100 mana/);assert(!chat.content.includes('Mestre'));assert(!chat.content.includes('Operação:'));assert(result.ok);assert.equal(notices.length,1);assert.equal(ledgerWrites,2);});
 test('API do mestre envia por User.update e não cria mensagens privadas',async()=>{const receipt=await service.request({direction:'credit',amount:100,revision:0});assert.equal(receipt.after,100);await service.queue.tail;assert.equal(publicCreates,1);assert.equal(service.pending.size,0);});
 test('identidade vem do hook e do documento; campos enviados não viram mestre',async()=>{const result=await process(request(0,{senderId:'gm',userId:'gm'}),'player');assert(!result.ok);assert.equal(data.sequence,0);assert.equal(publicCreates,0);});
-test('documento de outro usuário não pode solicitar uma operação',async()=>{await service.process(user('gm'),request(),'player');assert.equal(data.sequence,0);assert(!user('gm').getFlag(ID,'result').ok);});
+test('documento de outro usuário não pode solicitar uma operação',async()=>{await service.process(user('gm'),request(),'player');assert.equal(data.sequence,0);assert(!decodePacket(user('gm').getFlag(ID,'result')).ok);});
 test('player não credita nem usa escopo individual',async()=>{for(const changes of [{direction:'credit'},{direction:'debit',accountId:'other'}]){const result=await process(request(0,changes),'player');assert(!result.ok);}assert.equal(data.sequence,0);});
 test('falha de persistência não altera saldo, não publica chat nem aviso',async()=>{persistFail=true;assert(!(await process()).ok);assert.equal(data.sequence,0);assert.equal(publicCreates,0);assert.equal(notices.length,0);});
 test('falha de chat preserva saldo e aviso e recupera uma única mensagem',async()=>{chatFail=true;assert((await process()).ok);assert.equal(data.pool.balance,100);assert.equal(notices.length,1);assert(!data.transactions[0].chatPosted);chatFail=false;await service.retryChats();await service.retryChats();assert.equal(publicCreates,1);assert(data.transactions[0].chatPosted);assert.equal(notices.length,1);});
@@ -36,3 +36,13 @@ test('player não limpa histórico nem pela API nem com pedido forjado',async()=
 test('limpeza recupera chat pendente antes de remover o histórico',async()=>{chatFail=true;await process();const refused=await process(request(1,{id:'clear1',action:'clearHistory'}));assert(!refused.ok);assert.equal(data.transactions.length,1);chatFail=false;assert((await process(request(1,{id:'clear2',action:'clearHistory'}))).ok);assert.equal(publicCreates,1);assert.equal(data.transactions.length,0);});
 test('limpeza idempotente impede replay de uma operação anterior',async()=>{await process();const req=request(1,{id:'clear1',action:'clearHistory'});await process(req);await process(req);assert.equal(data.pool.revision,2);assert(!(await process(request())).ok);assert.equal(data.pool.balance,100);assert.equal(publicCreates,1);});
 test('confirmação forjada por jogador não resolve pedido pendente',async()=>{let resolved=false;service.pending.set('forged',{authorityId:'gm',resolve:()=>{resolved=true;},reject:()=>{},timer:null});game.user=user('player');await invoke('updateUser',user('player'),{flags:{[ID]:{result:{id:'forged',ok:true,receipt:{after:999}}}}},{},'player');assert.equal(resolved,false);service.pending.delete('forged');});
+test('eco das flags completas não enfileira a solicitação já recebida novamente',async()=>{
+ let confirmations=0;const update=user('gm').update.bind(user('gm'));
+ user('gm').update=async(...args)=>{if(Object.keys(args[0]).some(k=>k.endsWith('.result')))confirmations++;return update(...args);};
+ const req=request();await invoke('updateUser',user('gm'),{flags:{[ID]:{request:req}}},{},'gm');await service.queue.tail;await service.queue.tail;
+ const first=confirmations;await invoke('updateUser',user('gm'),{flags:{[ID]:{request:req,result:{id:req.id,ok:true}}}},{},'gm');await service.queue.tail;await service.queue.tail;
+ assert.equal(confirmations,first,'um eco de confirmação não pode gerar outra confirmação');assert.equal(data.pool.balance,100);
+});
+
+test('movimentações consecutivas usam pacotes completos substituíveis e liberam pendências',async()=>{for(let i=0;i<12;i++){const receipt=await service.request({direction:'credit',amount:10,revision:data.pool.revision});assert.equal(receipt.after,(i+1)*10);await service.queue.tail;assert.equal(service.pending.size,0);assert.equal(typeof user('gm').getFlag(ID,'request'),'string');assert.equal(typeof user('gm').getFlag(ID,'result'),'string');}assert.equal(data.pool.balance,120);assert.equal(publicCreates,12);});
+test('pacote malformado e patch parcial de pedido antigo são ignorados',async()=>{for(const value of ['{', {id:'partial',revision:1}, null])await invoke('updateUser',user('gm'),{flags:{[ID]:{request:value}}},{},'gm');await service.queue.tail;assert.equal(data.pool.balance,0);});
