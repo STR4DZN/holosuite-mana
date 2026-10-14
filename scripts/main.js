@@ -11,7 +11,7 @@ function registerHoloSuite(api=game.modules.get('holosuite-core')?.api){
 Hooks.once('init',()=>{
  service.register();
  game.settings.register(ID,'noticeColor',{scope:'client',config:false,type:String,default:CREDIT_COLOR});
- game.settings.register(ID,'reduceMotion',{name:'Banco Mana: reduzir movimentos',hint:'Mantém os avisos e valores finais com menos movimento.',scope:'client',config:true,type:Boolean,default:false});
+ game.settings.register(ID,'reduceMotion',{name:'Banco Mana: reduzir movimentos',hint:'Mantém os avisos e valores finais com menos movimento.',scope:'client',config:true,type:Boolean,default:false,onChange:()=>{app?.motionPreferenceChanged();notices?.reduceCurrent();}});
  Hooks.on('holosuite-core.apiReady',registerHoloSuite);
  game.modules.get(ID).api=Object.freeze({open,getBalance:()=>service.balance().balance,
   debit:(value,{note='',color,profile}={})=>service.request({direction:'debit',amount:value,note,color,profile,revision:service.balance().revision}),
@@ -19,4 +19,5 @@ Hooks.once('init',()=>{
 });
 Hooks.once('ready',()=>{
  notices=new ManaNotifications({reduced:()=>game.settings.get(ID,'reduceMotion')});service.onTransaction=r=>notices.enqueue(r);service.install();registerHoloSuite();
+ matchMedia('(prefers-reduced-motion: reduce)').addEventListener('change',()=>app?.motionPreferenceChanged());
 });

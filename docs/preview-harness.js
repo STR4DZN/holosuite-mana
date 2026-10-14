@@ -32,6 +32,7 @@ async function simulate(direction){
 }
 document.querySelector('#demo-role').onchange=e=>showRole(e.target.value==='gm');
 document.querySelector('#demo-gain').onclick=()=>simulate('credit');document.querySelector('#demo-loss').onclick=()=>simulate('debit');
-document.querySelector('#demo-reduced').onchange=e=>settings.set('reduceMotion',e.target.checked);
+document.querySelector('#demo-reduced').onchange=e=>{settings.set('reduceMotion',e.target.checked);app.motionPreferenceChanged();notifications.reduceCurrent();};
+matchMedia('(prefers-reduced-motion: reduce)').addEventListener('change',()=>app.motionPreferenceChanged());
 document.querySelector('#demo-reset').onclick=()=>{localStorage.removeItem('hollow-switch-preview-v2');location.reload();};
 sizePreview();await app.render();globalThis.bankPreview={app,service,notifications,showRole,simulate,users,get data(){return data;}};

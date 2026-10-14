@@ -35,7 +35,12 @@ export class BankApp extends foundry.applications.api.ApplicationV2 {
   this.previousBalance=this.service.balance().balance;this.lastTab=this.bankState.tab;
  }
  cancelMotion(){this.motion.forEach(a=>a.cancel());this.motion=[];cancelAnimationFrame(this.balanceFrame);this.balanceFrame=null;}
- _onRender(){if(!this.unsubscribe)this.unsubscribe=this.service.subscribe(()=>this.refresh());}
+ motionPreferenceChanged(){
+  const reduced=game.settings.get(ID,'reduceMotion')||matchMedia('(prefers-reduced-motion: reduce)').matches;
+  this.element?.querySelector('.mb-bank')?.classList.toggle('is-reduced',reduced);
+  if(reduced){this.cancelMotion();const value=this.element?.querySelector('.mb-balance-value');if(value)value.textContent=formatMana(this.service.balance().balance);}
+ }
+ _onRender(){this.motionPreferenceChanged();if(!this.unsubscribe)this.unsubscribe=this.service.subscribe(()=>this.refresh());}
  _onClose(){this.unsubscribe?.();this.unsubscribe=null;clearTimeout(this.timer);this.controller?.abort();this.cancelMotion();this.lastTab=null;}
  refresh(){if(!this.rendered)return;clearTimeout(this.timer);this.timer=setTimeout(()=>this.render().catch(error=>ui.notifications.error(error.message)),40);}
  onInput(event){

@@ -3,7 +3,7 @@ import {bankMark} from './icons.js';
 import {reactor} from './view.js';
 export function easeCount(before,after,progress){const t=Math.min(1,Math.max(0,progress));return Math.round(before+(after-before)*(1-Math.pow(1-t,4)));}
 export class ManaNotifications {
- constructor({reduced=()=>false}={}){this.queue=[];this.current=null;this.reduced=reduced;this.timer=null;this.frame=null;this.animations=[];this.root=null;this.events=new AbortController();window.addEventListener('pagehide',()=>this.destroy(),{signal:this.events.signal});}
+ constructor({reduced=()=>false}={}){this.queue=[];this.current=null;this.reduced=reduced;this.timer=null;this.frame=null;this.animations=[];this.root=null;this.events=new AbortController();window.addEventListener('pagehide',()=>this.destroy(),{signal:this.events.signal});this.media=matchMedia('(prefers-reduced-motion: reduce)');this.media.addEventListener('change',()=>this.reduceCurrent(),{signal:this.events.signal});}
  enqueue(receipt){this.queue.push(structuredClone(receipt));if(!this.current)this.next();}
  next(){
   const r=this.queue.shift();if(!r)return;this.current=r;const credit=r.direction?r.direction==='credit':r.delta>=0,reduced=this.reduced()||matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -41,6 +41,14 @@ export class ManaNotifications {
   play('.mb-notice-rail',[{opacity:1,transform:'scaleY(1)'},{opacity:0,transform:'scaleY(0)'}],500,6300,{fill:'forwards'});
   const delta=this.root.querySelector('.mb-notice-delta strong'),total=this.root.querySelector('.mb-notice-total strong'),start=performance.now();
   const tick=now=>{const t=(now-start-1000*factor)/(1800*factor);delta.textContent=formatMana(easeCount(0,r.amount,t));total.textContent=formatMana(easeCount(r.before,r.after,t));if(t<1&&this.current===r)this.frame=requestAnimationFrame(tick);else this.frame=null;};this.frame=requestAnimationFrame(tick);
+ }
+ reduceCurrent(){
+  if(!this.current||!this.root||!(this.reduced()||this.media.matches))return;
+  cancelAnimationFrame(this.frame);this.frame=null;this.animations.forEach(a=>a.cancel());this.animations=[];
+  this.root.querySelector('.mb-notice').classList.add('is-reduced');
+  this.root.querySelector('.mb-notice-delta strong').textContent=formatMana(this.current.amount);
+  this.root.querySelector('.mb-notice-total strong').textContent=formatMana(this.current.after);
+  clearTimeout(this.timer);this.timer=setTimeout(()=>this.finish(),2200);
  }
  finish(){clearTimeout(this.timer);cancelAnimationFrame(this.frame);this.animations.forEach(a=>a.cancel());this.animations=[];this.root?.remove();this.root=null;this.current=null;this.frame=null;this.timer=null;this.next();}
  destroy(){this.queue=[];this.finish();this.events.abort();}
