@@ -4,6 +4,8 @@ root=Path(__file__).resolve().parents[1]
 p=argparse.ArgumentParser();p.add_argument('--repository',default='STR4DZN/holosuite-mana');args=p.parse_args()
 m=json.loads((root/'module.json').read_text());url='https://github.com/'+args.repository
 assert m['compatibility']=={'minimum':'13','maximum':'13'}
+assert m['relationships']['requires'][0]['id']=='holosuite-core'
+assert m['relationships']['requires'][0]['compatibility']['minimum']=='1.0.12'
 m.update(url=url,manifest=url+'/releases/latest/download/module.json',download=url+'/releases/download/v'+m['version']+'/module.zip')
 out=root/'dist';out.mkdir(exist_ok=True)
 manifest=(json.dumps(m,ensure_ascii=False,indent=2)+'\n').encode();(out/'module.json').write_bytes(manifest)

@@ -2,4 +2,5 @@ import {execFileSync} from 'node:child_process';import {readdirSync,readFileSync
 for(const dir of ['scripts','tests','docs'])for(const file of readdirSync(dir))if(/\.(mjs|js)$/.test(file))execFileSync(process.execPath,['--check',`${dir}/${file}`]);
 const m=JSON.parse(readFileSync('module.json'));for(const file of [...m.esmodules,...m.styles])if(!existsSync(file))throw Error(file);
 if(m.compatibility.minimum!=='13'||m.compatibility.maximum!=='13')throw Error('Foundry version');
+if(m.relationships?.requires?.find(r=>r.id==='holosuite-core')?.compatibility?.minimum!=='1.0.12')throw Error('HoloSuite Core minimum contract: 1.0.12');
 console.log('Sintaxe, pontos de entrada e manifesto: OK');

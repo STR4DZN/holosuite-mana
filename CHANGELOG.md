@@ -1,5 +1,10 @@
 # Histórico
 
+## 1.0.3
+
+- Corrige o requisito mínimo do HoloSuite Core para 1.0.12 no manifesto.
+- A validação do pacote confere o contrato de dependência para impedir mudanças acidentais.
+
 ## 1.0.2
 
 - A cor da notificação é independente da paleta do banco; controles continuam legíveis com preto e cores escuras.

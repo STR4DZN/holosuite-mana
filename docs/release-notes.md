@@ -1,4 +1,4 @@
-Banco Mana 1.0.2 · Foundry VTT 13 / HoloSuite.
+Banco Mana 1.0.3 · Foundry VTT 13 / HoloSuite.
 
 - Aplicativo **Banco Mana**, com ícone de banco, dentro do HoloSuite.
 - Saldo de mana exibido imediatamente; conta individual por jogador.
@@ -9,7 +9,7 @@ Banco Mana 1.0.2 · Foundry VTT 13 / HoloSuite.
 - Testar aviso é local e não movimenta dinheiro.
 - 31 testes Node e 27 cenários de navegador, incluindo três clientes independentes.
 
-**Instalação:** cole a URL do asset `module.json` no campo URL do Manifesto do Foundry. Ative HoloSuite Core 1.0.22+ e HoloSuite · Banco Mana.
+**Instalação:** cole a URL do asset `module.json` no campo URL do Manifesto do Foundry. Ative HoloSuite Core 1.0.12+ e HoloSuite · Banco Mana.
 
 O saldo inicial é zero e pertence ao jogador, sem depender de personagem ou token. Um mestre ativo é necessário para movimentar mana. A compra automática na Máquina de Lanches não está ligada nesta versão.
 
