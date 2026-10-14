@@ -27,7 +27,6 @@ export class BankApp extends foundry.applications.api.ApplicationV2 {
   const reduced=game.settings.get(ID,'reduceMotion')||matchMedia('(prefers-reduced-motion: reduce)').matches;
   if(!reduced){
    if(entrance){for(const [i,el] of [...content.querySelectorAll('[data-enter]')].entries())this.motion.push(el.animate([{opacity:0,transform:'translateY(18px)'},{opacity:1,transform:'translateY(0)'}],{duration:600,delay:i*65,easing:'cubic-bezier(.16,1,.3,1)'}));
-    const reactor=content.querySelector('.mb-reactor-inner');if(reactor)this.motion.push(reactor.animate([{opacity:0,transform:'rotate(-25deg) scale(.8)'},{opacity:1,transform:'rotate(0) scale(1)'}],{duration:1100,easing:'cubic-bezier(.16,1,.3,1)'}));
    }
    const value=content.querySelector('.mb-balance-value'),before=this.previousBalance,after=this.service.balance().balance;
    if(value&&((before!==null&&before!==after)||this.balanceTransition?.target===after)){

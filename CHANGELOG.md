@@ -1,5 +1,13 @@
 # Histórico
 
+## 2.4.1
+
+- Remove o instrumento hexagonal, ondas, barras segmentadas e barra de duração do aviso; remove também a ornamentação circular do cartão do banco.
+- Layout de leitura único, sem radares ou gráficos. Preserva os números grandes, cores do mestre, contagem e duração de 4s.
+- Textura vetorial estática mínima, acabamento hachurado na borda e microanimações finitas: cantos, identificação, reflexos na moldura e selo desenhado ao finalizar.
+- Efeitos de acabamento usam somente transform e opacidade; sem filtros animados, bibliotecas ou arquivos externos.
+- 56 testes Node e 54 cenários Chromium, incluindo ausência de instrumentos/gráficos e valor máximo em janela de 320px.
+
 ## 2.4.0
 
 - Novo HUD de transferência: alteração de mana dominante, recortes, instrumento da reserva, textura, sinais, waveform e confirmação em etapas.
