@@ -1,0 +1,5 @@
+node_modules/
+dist/
+Banco-Mana-Preview.html
+qa-*.png
+__pycache__/
